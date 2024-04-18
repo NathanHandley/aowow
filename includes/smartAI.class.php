@@ -33,11 +33,6 @@ class SmartAI
             SAI_ACTION_MOUNT_TO_ENTRY_OR_MODEL => [1 => $npcId]
         );
 
-        if ($npcGuids = DB::Aowow()->selectCol('SELECT guid FROM ?_spawns WHERE `type` = ?d AND `typeId` = ?d', Type::NPC, $npcId))
-            if ($groups = DB::World()->selectCol('SELECT `groupId` FROM spawn_group WHERE `spawnType` = 0 AND `spawnId` IN (?a)', $npcGuids))
-                foreach ($groups as $g)
-                    $lookup[SAI_ACTION_SPAWN_SPAWNGROUP][1] = $g;
-
         $result = self::getActionOwner($lookup, $typeFilter);
 
         // can skip lookups for SAI_ACTION_SUMMON_CREATURE_GROUP as creature_summon_groups already contains summoner info
