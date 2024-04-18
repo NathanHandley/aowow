@@ -822,7 +822,7 @@ $lang = array(
         'empty'         => '[span class=q0]<empty>[/span]'
     ),
     'account' => array(
-        'title'         => "Aowow Account",
+        'title'         => "Eternal Wrath Account",
         'email'         => "Email address",
         'continue'      => "Continue",
         'groups'        => array(
@@ -831,7 +831,7 @@ $lang = array(
             "Screenshot manager",           "Video manager",                "API partner",                  "Pending"
         ),
         // signIn
-        'doSignIn'      => "Log in to your AoWoW Account",
+        'doSignIn'      => "Log in to your Eternal Wrath Account",
         'signIn'        => "Log In",
         'user'          => "Username",
         'pass'          => "Password",
