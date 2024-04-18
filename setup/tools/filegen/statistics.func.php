@@ -8,8 +8,7 @@ if (!CLI)
 
 
     /* deps:
-     * player_classlevelstats
-     * player_levelstats
+     * player_class_stats
     */
 
     // Create 'statistics'-file in datasets
@@ -134,19 +133,18 @@ if (!CLI)
                 $rows = DB::World()->select('
                     SELECT
 					   pcs.level AS ARRAY_KEY,
-					   pcs.Strength - ?d, pcs.Agility - ?d, pcs.Stamina - ?d, pcs.Intellect - ?d, pcs.Spirit - ?d,
+					   pcs.Strength, pcs.Agility, pcs.Stamina, pcs.Intellect, pcs.Spirit,
 					   pcs.BaseHP, pcs.BaseMana
 					FROM
 					   player_class_stats pcs
 					WHERE
 					   pcs.class = ?d ORDER BY pcs.level ASC',
-                    $offset[0], $offset[1], $offset[2], $offset[3], $offset[4],
                     $class
                 );
 
                 $result[$class] = [];
                 foreach ($rows as $lvl => $row)
-                    $result[$class][$lvl] = array_values(array_merge($row, $gtData[$lvl]));
+                    $result[$class][$lvl] = array_values($row, );
             }
 
             return $result;
