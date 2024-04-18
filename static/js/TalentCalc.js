@@ -6,7 +6,7 @@ function TalentCalc() {
         MODE_PET           = 1,
 
         MIN_LEVEL          = 10,
-        MAX_LEVEL          = 80,
+        MAX_LEVEL          = 90,
 
         _versionBuild      = 85,
         _self              = this,
@@ -355,7 +355,7 @@ function TalentCalc() {
                 2 : [15, 50, 70]   // Minor
             };
             _pointsPerTier   = 5;
-            _basePoints      = 71;
+            _basePoints      = 142;
             _pointsFromBonus = 0;
             _referenceArray  = g_chr_classes;
 
@@ -1559,7 +1559,7 @@ function TalentCalc() {
             r = Math.max(_bonusPoints ? 60 : 0, c.k > 0 ? (c.k - _bonusPoints) * 4 + 16 : 0);
         }
         else {
-            r = (c.k ? c.k + 9 : 0);
+            r = (c.k ? c.k/2 + 9 : 0);
             // r = (c.k > 0 ? Math.max(0, 2 - c.k) + Math.min(36, c.k - 1) * 2 + Math.max(0, c.k - 37) + 9 : 0);
         }
 
