@@ -1559,7 +1559,7 @@ function TalentCalc() {
             r = Math.max(_bonusPoints ? 60 : 0, c.k > 0 ? (c.k - _bonusPoints) * 4 + 16 : 0);
         }
         else {
-            r = (c.k ? c.k/2 + 9 : 0);
+            r = (c.k ? Math.ceil(c.k/2) + 9 : 0);
             // r = (c.k > 0 ? Math.max(0, 2 - c.k) + Math.min(36, c.k - 1) * 2 + Math.max(0, c.k - 37) + 9 : 0);
         }
 
