@@ -133,17 +133,14 @@ if (!CLI)
 
                 $rows = DB::World()->select('
                     SELECT
-                        pls.level AS ARRAY_KEY,
-                        pls.str - ?d, pls.agi - ?d, pls.sta - ?d, pls.inte - ?d, pls.spi - ?d,
-                        pcls.basehp, IF(pcls.basemana <> 0, pcls.basemana, 100)
-                    FROM
-                        player_levelstats pls
-                    JOIN
-                        player_classlevelstats pcls ON pls.level = pcls.level AND pls.class = pcls.class
-                    WHERE
-                        pls.race = ?d AND pls.class = ?d ORDER BY pls.level ASC',
+					   pcs.level AS ARRAY_KEY,
+					   pcs.Strength - ?d, pcs.Agility - ?d, pcs.Stamina - ?d, pcs.Intellect - ?d, pcs.Spirit - ?d,
+					   pcs.BaseHP, pcs.BaseMana
+					FROM
+					   player_class_stats pcs
+					WHERE
+					   pcs.class = ?d ORDER BY pcs.level ASC',
                     $offset[0], $offset[1], $offset[2], $offset[3], $offset[4],
-                    in_array($class, [3, 7, 11]) ? 6 : 1,
                     $class
                 );
 
