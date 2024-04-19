@@ -84,9 +84,6 @@ endif;
         <div class="footer-links linklist">
             <a href="https://github.com/NathanHandley/aowow" target="_blank">Github</a>
         </div>
-        <div class="footer-copy">
-            &#12484; 2024 Eternal Wrath<br />
-        </div>
     </div>
 
 <?php $this->brick('pageTemplate'); ?>
