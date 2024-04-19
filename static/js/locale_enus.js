@@ -1057,37 +1057,8 @@ var mn_reputation = [
     // [16, "Border: Legendary", "?privilege=16"],
     [17, "AoWoW Premium", "?privilege=17"]
 ];
-var mn_community = [
-    [3,"Forum","http://forums.battle.net",null,{tinyIcon: g_staticUrl + "/images/icons/forum.png"}],
-    [7,"Blog","http://worldpress.com",null,{tinyIcon: g_staticUrl + "/images/icons/blog.png"}],
-    [4,"IRC-Channel","http://webchat.quakenet.org/",null,{tinyIcon: g_staticUrl + "/images/icons/irc.png"}],
-    [,"Community"],
-    [10, "Site Reputation", "?reputation", mn_reputation],
-    [11, "Top Users", "?top-users"],
-    [,"Social"],
-    [6,"Facebook Page","http://www.facebook.com",null,{tinyIcon: g_staticUrl + "/images/icons/facebook.png"}],
-    [5,"Twitter Page","http://twitter.com",null,{tinyIcon: g_staticUrl + "/images/icons/twitter.png"}]
-];
-var mn_more = [
-    [,"All About AoWoW"],
-    [0,"About Us & Contact","?aboutus"],
-    [3,"FAQ","?faq"],
-    [13,"Help",,[
-        [0,"Commenting and You","?help=commenting-and-you"],
-        [5,"Item Comparison","?help=item-comparison"],
-        [1,"Model Viewer","?help=modelviewer"],
-        [6,"Profiler","?help=profiler"],
-        [2,"Screenshots: Tips & Tricks","?help=screenshots-tips-tricks"],
-        [3,"Stat Weighting","?help=stat-weighting"],
-        [4,"Talent Calculator","?help=talent-calculator"],
-        [7,"Markup Guide","?help=markup-guide"]
-    ]],
-    [7,"What's New","?whats-new"],
-    [,"Goodies"],
-    [16, "Search Box","?searchbox"],
-    [8,"Search Plugins (FF, IE7, ...)","?searchplugins"],
-    [10,"Tooltips","?tooltips"]
-];
+var mn_community = [];
+var mn_more = [];
 
 var mn_path = [
     [0, "Database",  null     , mn_database ],
