@@ -885,18 +885,12 @@ var PageTemplate = new function()
                 break;
 
             case 2: // More
-                Menu.addButtons($buttons, Menu.implode(mn_more));
                 break;
 
             case 3: // Community
-                Menu.addButtons($buttons, Menu.implode(mn_community));
-                Menu.addButtons($buttons, [
-                    Menu.findItem(mn_tools, [8]) // Utilities
-                ]);
                 break;
 
             case 4: // Staff
-                Menu.addButtons($buttons, Menu.implode(mn_staff));
                 break;
 
             case 5: // News
