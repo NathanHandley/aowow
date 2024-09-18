@@ -132,19 +132,26 @@ if (!CLI)
 
                 $rows = DB::World()->select('
                     SELECT
-					   pcs.level AS ARRAY_KEY,
-					   pcs.Strength, pcs.Agility, pcs.Stamina, pcs.Intellect, pcs.Spirit,
-					   pcs.BaseHP, pcs.BaseMana
-					FROM
-					   player_class_stats pcs
-					WHERE
-					   pcs.class = ?d ORDER BY pcs.level ASC',
+                        pcs.Level AS ARRAY_KEY,
+                        0 as Strength, pcs.Agility - ?d, pcs.Stamina - ?d, pcs.Intellect - ?d, pcs.Spirit - ?d,
+                        pcs.BaseHP, IF(pcs.BaseMana <> 0, pcs.BaseMana, 100)
+                    FROM
+                        player_class_stats pcs
+                    WHERE
+                        pcs.Class = ?d ORDER BY pcs.Level ASC',
+
+                    // IF(pcs.Strength - ?d <= 0, 0, pcs.Strength - ?d),
+
+                    // WHERE pls.race = ?d AND 
+
+                    $offset[0], /* $offset[0], */ $offset[1], $offset[2], $offset[3], $offset[4],
+                    // in_array($class, [3, 7, 11]) ? 6 : 1,
                     $class
                 );
 
                 $result[$class] = [];
                 foreach ($rows as $lvl => $row)
-                    $result[$class][$lvl] = array_values($row, );
+                    $result[$class][$lvl] = array_values(array_merge($row, $gtData[$lvl]));
             }
 
             return $result;
