@@ -346,6 +346,141 @@ var mn_objects = [
     [6,"Traps"]
 ];
 var mn_quests = [
+    // EQWOW: EverQuest continents (categories = continent map ids, children = zone area ids)
+    [,"Norrath"],
+    [895, "Antonica", , [
+        [5103, "Befallen"],
+        [5105, "Blackburrow"],
+        [5124, "East Commonlands"],
+        [5136, "East Freeport"],
+        [5122, "Eastern Plains of Karana"],
+        [5129, "Everfrost"],
+        [5104, "Gorge of King Xorbb"],
+        [5143, "Grobb"],
+        [5146, "Guk"],
+        [5147, "Halas"],
+        [5149, "High Keep"],
+        [5150, "Highpass Hold"],
+        [5153, "Innothule Swamp"],
+        [5161, "Kithicor Forest"],
+        [5185, "Lair of the Splitpaw"],
+        [5164, "Lake Rathetear"],
+        [5165, "Lavastorm Mountains"],
+        [5167, "Loading Area"],
+        [5111, "Lost Temple of Cazic-Thule"],
+        [5170, "Misty Thicket"],
+        [5202, "Nagafen's Lair"],
+        [5171, "Najena"],
+        [5173, "Nektulos Forest"],
+        [5175, "Neriak Commons"],
+        [5174, "Neriak Foreign Quarter"],
+        [5176, "Neriak Third Gate"],
+        [5137, "North Freeport"],
+        [5190, "North Qeynos"],
+        [5178, "Northern Desert of Ro"],
+        [5177, "Northern Plains of Karana"],
+        [5180, "Oasis of Marr"],
+        [5181, "Oggok"],
+        [5186, "Permafrost Caverns"],
+        [5130, "Plane of Fear"],
+        [5148, "Plane of Hate"],
+        [5100, "Plane of Sky"],
+        [5187, "Qeynos Aqueduct System"],
+        [5191, "Qeynos Hills"],
+        [5193, "Rathe Mountains"],
+        [5194, "Rivervale"],
+        [5145, "Ruins of Old Guk"],
+        [5195, "Runnyeye Citadel"],
+        [5201, "Solusek's Eye"],
+        [5189, "South Qeynos"],
+        [5206, "Southern Desert of Ro"],
+        [5204, "Southern Plains of Karana"],
+        [5192, "Surefall Glade"],
+        [5203, "Temple of Solusek Ro"],
+        [5102, "The Arena"],
+        [5131, "The Feerrott"],
+        [5215, "Tutorial"],
+        [5116, "West Commonlands"],
+        [5138, "West Freeport"],
+        [5188, "Western Plains of Karana"]
+    ]],
+    [896, "Odus", , [
+        [5128, "Erud's Crossing"],
+        [5126, "Erudin"],
+        [5127, "Erudin Palace"],
+        [5160, "Kerra Isle"],
+        [5184, "Paineel"],
+        [5208, "Stonebrunt Mountains"],
+        [5151, "The Hole"],
+        [5220, "The Warrens"],
+        [5213, "Toxxulia Forest"]
+    ]],
+    [897, "Faydwer", , [
+        [5101, "Ak'Anon"],
+        [5107, "Butcherblock Mountains"],
+        [5169, "Castle Mistmoore"],
+        [5117, "Crushbone"],
+        [5110, "Dagnor's Cauldron"],
+        [5218, "Estate of Unrest"],
+        [5141, "Greater Faydark"],
+        [5159, "Kedge Keep"],
+        [5166, "Lesser Faydark"],
+        [5157, "North Kaladim"],
+        [5132, "Northern Felwithe"],
+        [5182, "Ocean of Tears"],
+        [5156, "South Kaladim"],
+        [5133, "Southern Felwithe"],
+        [5207, "Steamfont Mountains"]
+    ]],
+    [898, "Kunark", , [
+        [5113, "Chardok"],
+        [5114, "City of Mist"],
+        [5108, "East Cabilis"],
+        [5125, "Emerald Jungle"],
+        [5135, "Firiona Vie"],
+        [5139, "Frontier Mountains"],
+        [5112, "Howling Stones"],
+        [5155, "Kaesora"],
+        [5158, "Karnor's Castle"],
+        [5162, "Kurn's Tower"],
+        [5163, "Lake of Ill Omen"],
+        [5179, "Mines of Nurga"],
+        [5196, "Old Sebilis"],
+        [5198, "Skyfire Mountains"],
+        [5205, "Swamp of No Hope"],
+        [5121, "Temple of Droga"],
+        [5106, "The Burning Wood"],
+        [5119, "The Crypt of Dalnir"],
+        [5120, "The Dreadlands"],
+        [5134, "The Field of Bone"],
+        [5183, "The Overthere"],
+        [5212, "Timorous Deep"],
+        [5214, "Trakanon's Teeth"],
+        [5216, "Veeshan's Peak"],
+        [5221, "Warsliks Woods"],
+        [5109, "West Cabilis"]
+    ]],
+    [899, "Velious", , [
+        [5115, "Cobalt Scar"],
+        [5118, "Crystal Cavern"],
+        [5172, "Dragon Necropolis"],
+        [5123, "Eastern Wastes"],
+        [5152, "Iceclad Ocean"],
+        [5211, "Icewell Keep"],
+        [5154, "Kael Drakkal"],
+        [5144, "Plane of Growth"],
+        [5168, "Plane of Mischief"],
+        [5197, "Siren's Grotto"],
+        [5199, "Skyshrine"],
+        [5200, "Sleeper's Tomb"],
+        [5209, "Temple of Veeshan"],
+        [5142, "The Great Divide"],
+        [5210, "Thurgadin"],
+        [5140, "Tower of Frozen Shadow"],
+        [5217, "Velketor's Labyrinth"],
+        [5219, "Wakening Land"],
+        [5222, "Western Wastes"]
+    ]],
     [,"Continents"],
     [0, "Eastern Kingdoms", , [
         [1, "Dun Morogh", , [[132, "Coldridge Valley", "?quests=0.132"]]],
@@ -631,6 +766,16 @@ var mn_spells = [
         [13,"Magician",,,{className:"c8",tinyIcon:"class_mage"}],
         [14,"Enchanter",,,{className:"c5",tinyIcon:"class_priest"}]
     ]],
+    // EQWOW: EQ tradeskill names -> the WOW skill lines the converter maps them onto (see TradeskillType.cs)
+    [,"EQ Tradeskills",,[
+        [,"Alchemy / Poison Making",'?spells=11.171'],
+        [,"Baking / Brewing / Fishing",'?spells=9.185'],
+        [,"Fletching / Tinkering",'?spells=11.202'],
+        [,"Jewelry Making",'?spells=11.755'],
+        [,"Research",'?spells=11.773'],
+        [,"Smithing / Pottery",'?spells=11.164'],
+        [,"Tailoring",'?spells=11.197']
+    ]],
     [,"Character"],
     [7,"Class Skills",,[
         [6,"Death Knight",,[[770,"Blood",,,{tinyIcon:"Spell_Deathknight_BloodPresence"}],[771,"Frost",,,{tinyIcon:"Spell_Deathknight_FrostPresence"}],[772,"Unholy",,,{tinyIcon:"Spell_Deathknight_UnholyPresence"}],[776,"Runeforging"]],{className:"c6",tinyIcon:"class_deathknight"}],
@@ -775,6 +920,8 @@ var mn_zones = [
     [9,"Arenas"]
 ];
 var mn_factions = [
+    // EQWOW: EverQuest faction folder (faction id 1200)
+    [1200,"EverQuest"],
     [1118,"Classic",,[[469,"Alliance"],[891,"Alliance Forces"],[67,"Horde"],[892,"Horde Forces"],[169,"Steamwheedle Cartel"]]],
     [980,"The Burning Crusade",,[[936,"Shattrath City"]]],
     [1097,"Wrath of the Lich King",,[[1037,"Alliance Vanguard"],[1052,"Horde Expedition"],[1117,"Sholazar Basin"]]],
@@ -1100,7 +1247,7 @@ var mn_reputation = [
     [17, "AoWoW Premium", "?privilege=17"]
 ];
 var mn_community = [
-    [3,"Discord","https://discord.com/invite/gkt4y2x",null,{tinyIcon: g_staticUrl + "/images/icons/discord.png"}],
+    [3,"Discord","https://discord.gg/erq4kDeCrR",null,{tinyIcon: g_staticUrl + "/images/icons/discord.png"}],
     // [7,"Blog","http://worldpress.com",null,{tinyIcon: g_staticUrl + "/images/icons/blog.png"}],
     // [4,"IRC-Channel","http://webchat.quakenet.org/",null,{tinyIcon: g_staticUrl + "/images/icons/irc.png"}],
     [,"Community"],
@@ -1134,9 +1281,8 @@ var mn_more = [
 var mn_path = [
     [0, "Database",  null     , mn_database ],
     [1, "Tools",     null     , mn_tools    ],
-    [3, "Community", null     , mn_community],
-    [6, "Guides",    '?guides', mn_guides   ],
-    [2, "More",      null     , mn_more     ]
+    [3, "Community", null     , mn_community]
+    // EQWOW: Guides ([6, "Guides", '?guides', mn_guides]) and More ([2, "More", null, mn_more]) menus removed
 /* Note: ID 4 is used by the Staff menu - Skip it. It's added by staff.js */
 ];
 

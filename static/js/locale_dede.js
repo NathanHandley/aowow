@@ -1013,7 +1013,7 @@ var mn_reputation = [
     [17, "AoWoW Premium", "?privilege=17"]
 ];
 var mn_community = [
-    [3,"Discord","https://discord.com/invite/gkt4y2x",null,{tinyIcon: g_staticUrl + "/images/icons/discord.png"}],
+    [3,"Discord","https://discord.gg/erq4kDeCrR",null,{tinyIcon: g_staticUrl + "/images/icons/discord.png"}],
     // [7,"Blog","http://worldpress.com",null,{tinyIcon: g_staticUrl + "/images/icons/blog.png"}],
     // [4,"IRC-Channel","http://webchat.quakenet.org/",null,{tinyIcon: g_staticUrl + "/images/icons/irc.png"}],
     [,"Community"],

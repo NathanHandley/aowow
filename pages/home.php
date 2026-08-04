@@ -54,8 +54,8 @@ class HomePage extends GenericPage
 
     protected function generateTitle()
     {
-        if ($_ = DB::Aowow()->selectCell('SELECT title FROM ?_home_titles WHERE active = 1 AND locale = ?d ORDER BY RAND() LIMIT 1', Lang::getLocale()->value))
-            $this->homeTitle = Cfg::get('NAME').Lang::main('colon').$_;
+        // EQWOW: no random joke subtitle from ?_home_titles - just the plain site name
+        $this->homeTitle = Cfg::get('NAME');
     }
 
     protected function generatePath() {}

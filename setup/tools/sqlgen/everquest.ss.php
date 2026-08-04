@@ -52,6 +52,10 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         DB::Aowow()->query('TRUNCATE ?_everquest_item');
         DB::Aowow()->query('TRUNCATE ?_everquest_spell_learn');
 
+        // EQWOW: joke page subtitles are not wanted on this site; keep them deactivated even if a
+        // fresh db_structure.sql import re-seeds them
+        DB::Aowow()->query('UPDATE ?_home_titles SET `active` = 0');
+
         if (!DB::World()->selectCell('SHOW TABLES LIKE ?', 'mod_everquest_item_template'))
         {
             CLI::write('[everquest] mod_everquest_item_template not found in world db - EQWOW data not deployed? Skipping.', CLI::LOG_WARN);

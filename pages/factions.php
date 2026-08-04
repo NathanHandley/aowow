@@ -19,6 +19,7 @@ class FactionsPage extends GenericPage
         1118 => [469, 891, 67, 892, 169],
         980  => [936],
         1097 => [1037, 1052, 1117],
+        1200 => true,                                       // EQWOW: EverQuest faction folder
         0    => true
     );
 

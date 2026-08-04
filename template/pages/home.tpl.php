@@ -80,17 +80,7 @@ endif;
 
     <div class="toplinks linklist"><?php $this->brick('headerMenu'); ?></div>
 
-    <div class="footer">
-        <div class="footer-links linklist">
-            <a href="?aboutus"><?=Lang::main('aboutUs'); ?></a>|<a href="https://github.com/azerothcore/aowow" target="_blank">Github</a>|<a href="#" id="footer-links-language"><?=Lang::main('language'); ?></a>
-        </div>
-        <div class="footer-copy">
-            &#12484; 2025 Aowow<br />
-            rev. <?=AOWOW_REVISION; ?>
-            <br>
-            AzerothCore rev: <a href="https://github.com/azerothcore/azerothcore-wotlk/commit/804769400bcb">804769400bcb</a>
-        </div>
-    </div>
+<?php /* EQWOW: home page footer (About us & contact, Github, Language, copyright) removed */ ?>
 
 <?php $this->brick('pageTemplate'); ?>
 

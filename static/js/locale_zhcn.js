@@ -1059,7 +1059,7 @@ var mn_reputation = [
     [17, "Aowow会员", "?privilege=17"]
 ];
 var mn_community = [
-    [3,"Discord","https://discord.com/invite/gkt4y2x",null,{tinyIcon: g_staticUrl + "/images/icons/discord.png"}],
+    [3,"Discord","https://discord.gg/erq4kDeCrR",null,{tinyIcon: g_staticUrl + "/images/icons/discord.png"}],
     // [7,"博客","http://worldpress.com",null,{tinyIcon: g_staticUrl + "/images/icons/blog.png"}],
     // [4,"IRC频道","http://webchat.quakenet.org/",null,{tinyIcon: g_staticUrl + "/images/icons/irc.png"}],
     [,"社区"],
