@@ -78,6 +78,23 @@ var mn_races = [
     [5,"Undead",,,{tinyIcon:"race_scourge_female"}]
 ];
 var mn_items = [
+    // EQWOW: browse items by EQ class (AllowedEQClassMask filter)
+    [,"EQ Classes",,[
+        [,"Warrior",'?items&filter=ubeq=1',,{className:"c1",tinyIcon:"class_warrior"}],
+        [,"Cleric",'?items&filter=ubeq=2',,{className:"c5",tinyIcon:"class_priest"}],
+        [,"Paladin",'?items&filter=ubeq=3',,{className:"c2",tinyIcon:"class_paladin"}],
+        [,"Ranger",'?items&filter=ubeq=4',,{className:"c3",tinyIcon:"class_hunter"}],
+        [,"Shadow Knight",'?items&filter=ubeq=5',,{className:"c6",tinyIcon:"class_deathknight"}],
+        [,"Druid",'?items&filter=ubeq=6',,{className:"c11",tinyIcon:"class_druid"}],
+        [,"Monk",'?items&filter=ubeq=7',,{className:"c4",tinyIcon:"class_rogue"}],
+        [,"Bard",'?items&filter=ubeq=8',,{className:"c1",tinyIcon:"class_warrior"}],
+        [,"Rogue",'?items&filter=ubeq=9',,{className:"c4",tinyIcon:"class_rogue"}],
+        [,"Shaman",'?items&filter=ubeq=10',,{className:"c7",tinyIcon:"class_shaman"}],
+        [,"Necromancer",'?items&filter=ubeq=11',,{className:"c9",tinyIcon:"class_warlock"}],
+        [,"Wizard",'?items&filter=ubeq=12',,{className:"c8",tinyIcon:"class_mage"}],
+        [,"Magician",'?items&filter=ubeq=13',,{className:"c8",tinyIcon:"class_mage"}],
+        [,"Enchanter",'?items&filter=ubeq=14',,{className:"c5",tinyIcon:"class_priest"}]
+    ]],
     [2,"Weapons",,[
         [,"One-Handed",'?items=2&filter=ty=15:13:0:4:7'],
         [15,"Daggers"],
@@ -597,6 +614,23 @@ var mn_skills = [
     [7,"Class Skills","?skills=7"]
 ];
 var mn_spells = [
+    // EQWOW: EQ class spell lists; learn levels are taken from spell scrolls
+    [-15,"EQ Class Spells",,[
+        [1,"Warrior",,,{className:"c1",tinyIcon:"class_warrior"}],
+        [2,"Cleric",,,{className:"c5",tinyIcon:"class_priest"}],
+        [3,"Paladin",,,{className:"c2",tinyIcon:"class_paladin"}],
+        [4,"Ranger",,,{className:"c3",tinyIcon:"class_hunter"}],
+        [5,"Shadow Knight",,,{className:"c6",tinyIcon:"class_deathknight"}],
+        [6,"Druid",,,{className:"c11",tinyIcon:"class_druid"}],
+        [7,"Monk",,,{className:"c4",tinyIcon:"class_rogue"}],
+        [8,"Bard",,,{className:"c1",tinyIcon:"class_warrior"}],
+        [9,"Rogue",,,{className:"c4",tinyIcon:"class_rogue"}],
+        [10,"Shaman",,,{className:"c7",tinyIcon:"class_shaman"}],
+        [11,"Necromancer",,,{className:"c9",tinyIcon:"class_warlock"}],
+        [12,"Wizard",,,{className:"c8",tinyIcon:"class_mage"}],
+        [13,"Magician",,,{className:"c8",tinyIcon:"class_mage"}],
+        [14,"Enchanter",,,{className:"c5",tinyIcon:"class_priest"}]
+    ]],
     [,"Character"],
     [7,"Class Skills",,[
         [6,"Death Knight",,[[770,"Blood",,,{tinyIcon:"Spell_Deathknight_BloodPresence"}],[771,"Frost",,,{tinyIcon:"Spell_Deathknight_FrostPresence"}],[772,"Unholy",,,{tinyIcon:"Spell_Deathknight_UnholyPresence"}],[776,"Runeforging"]],{className:"c6",tinyIcon:"class_deathknight"}],
@@ -722,6 +756,13 @@ var mn_spells = [
     [0,"Uncategorized"]
 ];
 var mn_zones = [
+    // EQWOW: EverQuest continents (zone categories = continent map ids from mod_everquest_viewer_zone)
+    [,"Norrath"],
+    [895,"Antonica"],
+    [896,"Odus"],
+    [897,"Faydwer"],
+    [898,"Kunark"],
+    [899,"Velious"],
     [,"Continents"],
     [0,"Eastern Kingdoms"],
     [1,"Kalimdor"],
@@ -2190,7 +2231,13 @@ var g_zone_categories = {
      6: 'Battlegrounds',
      8: 'Outland',
      9: 'Arenas',
-    10: 'Northrend'
+    10: 'Northrend',
+    // EQWOW: EverQuest continents
+    895: 'Antonica',
+    896: 'Odus',
+    897: 'Faydwer',
+    898: 'Kunark',
+    899: 'Velious'
 };
 
 var g_zone_instancetypes = {

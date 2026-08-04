@@ -108,6 +108,20 @@ endforeach;
 ?>
                                 </select></td>
                             </td>
+                        </tr><tr>
+                            <!-- EQWOW: filter by EQ class (AllowedEQClassMask from the EQWOW mod) -->
+                            <td class="padded"><?=Lang::item('usableByEQ').Lang::main('colon'); ?></td>
+                            <td class="padded" colspan="2">
+                                &nbsp;<select name="ubeq">
+                                    <option></option>
+<?php
+foreach (Lang::game('eqcl') as $k => $str):
+    if ($str):
+        echo '                            <option value="'.$k.'"'.(isset($f['ubeq']) && $k == $f['ubeq'] ? ' selected' : null).'>'.$str."</option>\n";
+    endif;
+endforeach;
+?>
+                                </select></td>
                         </tr>
                     </table>
 

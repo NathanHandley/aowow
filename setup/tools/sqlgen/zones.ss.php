@@ -80,6 +80,22 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         DB::Aowow()->query('INSERT INTO ?_zones VALUES (?a)', $baseData);
 
 
+        // EQWOW: group EverQuest zones under their continent maps using mod_everquest_viewer_zone (generated
+        // by the EQWOW converter when GENERATE_DATABASE_VIEWER_TABLES is enabled). Continent maps themselves
+        // are display-only shells and get hidden from zone listviews.
+        if (DB::World()->selectCell('SHOW TABLES LIKE ?', 'mod_everquest_viewer_zone'))
+        {
+            $eqZones = DB::World()->select('SELECT `MapID` AS ARRAY_KEY, `ContinentMapID`, `IsContinent`, `ExpansionID` FROM mod_everquest_viewer_zone');
+            foreach ($eqZones as $eqMapId => $eqZone)
+            {
+                if ($eqZone['IsContinent'])
+                    DB::Aowow()->query('UPDATE ?_zones SET `cuFlags` = `cuFlags` | ?d WHERE `mapId` = ?d', CUSTOM_EXCLUDE_FOR_LISTVIEW, $eqMapId);
+                else
+                    DB::Aowow()->query('UPDATE ?_zones SET `category` = ?d, `expansion` = ?d WHERE `mapId` = ?d AND `parentArea` = 0', $eqZone['ContinentMapID'], $eqZone['ExpansionID'], $eqMapId);
+            }
+        }
+
+
         // set missing graveyards from areatrigger data (auto-resurrect map or just plain errors)
         // grouped because naxxramas _just has_ to be special with 4 entrances...
         if ($missingMaps = DB::Aowow()->selectCol('SELECT `id` FROM dbc_map WHERE `parentX` = 0 AND `parentY` = 0 AND `parentMapId` > -1 AND `areaType` NOT IN (0, 3, 4)'))

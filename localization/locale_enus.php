@@ -391,6 +391,9 @@ $lang = array(
         'dt'            => [null, "Magic", "Curse", "Disease", "Poison", "Stealth", "Invisibility", "Magic, Curse, Disease, Poison", "Spell (NPC)", "Enrage"],                      // SpellDispalType.dbc
         'sc'            => ["Physical", "Holy", "Fire", "Nature", "Frost", "Shadow", "Arcane"],                                                                                     // STRING_SCHOOL_*
         'cl'            => [null, "Warrior", "Paladin", "Hunter", "Rogue", "Priest", "Death Knight", "Shaman", "Mage", "Warlock", null, "Druid"],                                   // ChrClasses.dbc
+        'eqcl'          => [null, "Warrior", "Cleric", "Paladin", "Ranger", "Shadow Knight", "Druid", "Monk", "Bard", "Rogue", "Shaman", "Necromancer", "Wizard", "Magician", "Enchanter"], // EQWOW: EQ classes (server ids 1-14, mask bit = 1 << (id - 1))
+        'eqClass'       => "EQ class",                      // EQWOW
+        'eqLearnLevel'  => "EQ learn level",                // EQWOW
         'ra'            => [-2 => "Horde", -1 => "Alliance", null, "Human", "Orc", "Dwarf", "Night Elf", "Undead", "Tauren", "Gnome", "Troll", null, "Blood Elf", "Draenei"],       // ChrRaces.dbc
         'rep'           => ["Hated", "Hostile", "Unfriendly", "Neutral", "Friendly", "Honored", "Revered", "Exalted"],                                                              // FACTION_STANDING_LABEL*
         'st'            => array(                           // SpellShapeshiftForm.dbc // with minor deviations on 27, 28
@@ -1232,7 +1235,9 @@ $lang = array(
         'territories'   => ["Alliance", "Horde",   "Contested", "Sanctuary", "PvP",          "World PvP"],
         'cat'           => array(
             "Eastern Kingdoms",         "Kalimdor",                 "Dungeons",                 "Raids",                    "Unused",                   null,
-            "Battlegrounds",            null,                       "Outland",                  "Arenas",                   "Northrend"
+            "Battlegrounds",            null,                       "Outland",                  "Arenas",                   "Northrend",
+            // EQWOW: EverQuest continents (categories = continent map ids)
+            895 => "Antonica",          896 => "Odus",              897 => "Faydwer",           898 => "Kunark",            899 => "Velious"
         )
     ),
     'quest' => array(
@@ -1598,6 +1603,13 @@ $lang = array(
               9 => ["Secondary Skills", 185 => "Cooking", 129 => "First Aid", 356 => "Fishing", 762 => "Riding"],
              -8 => "NPC Abilities",
              -9 => "GM Abilities",
+            -15 => array(                                   // EQWOW: EQ classes (learn levels from spell scrolls)
+                "EQ Class Spells",
+                1 => "Warrior",         2 => "Cleric",          3 => "Paladin",         4 => "Ranger",
+                5 => "Shadow Knight",   6 => "Druid",           7 => "Monk",            8 => "Bard",
+                9 => "Rogue",           10 => "Shaman",         11 => "Necromancer",    12 => "Wizard",
+                13 => "Magician",       14 => "Enchanter"
+            ),
               0 => "Uncategorized"
         ),
         'armorSubClass' => array(                           // ItemSubClass.dbc/2
@@ -1857,6 +1869,7 @@ $lang = array(
         'slot'          => "Slot",
         '_quality'      => "Quality",                       // QUALITY
         'usableBy'      => "Usable by",
+        'usableByEQ'    => "Usable by EQ class",            // EQWOW
         'buyout'        => "Buyout price",                  // BUYOUT_PRICE
         'each'          => "each",
         'tabOther'      => "Other",

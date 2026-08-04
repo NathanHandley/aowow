@@ -220,8 +220,11 @@ CLISetup::registerUtility(new class extends UtilityScript
                             $error[] = ' * '.$what.': doesn\'t seem to contain aowow tables!';
                         break;
                     case DB_WORLD:
+                        // EQWOW: accept AzerothCore world databases (ACDB version string) alongside TDB
                         if (!DB::World()->selectCell('SHOW TABLES LIKE ?', 'version'))
                             $error[] = ' * '.$what.': doesn\'t seem to contain TrinityCore world tables!';
+                        else if (strpos(DB::World()->selectCell('SELECT `db_version` FROM `version`') ?? '', 'ACDB') === 0)
+                            break;                          // AzerothCore world db - no TDB revision check applies
                         else if (DB::World()->selectCell('SELECT `cache_id` FROM `version`') < TDB_WORLD_MINIMUM_VER)
                             $error[] = ' * '.$what.': TDB world db is structurally outdated! (min rev.: '.CLI::bold(TDB_WORLD_MINIMUM_VER).')';
                         break;
@@ -283,7 +286,11 @@ CLISetup::registerUtility(new class extends UtilityScript
                                 }
                             }
                             else if (strpos($vString, 'ACDB') === 0)
-                                $note = CLI::yellow('DB test found AzerothCore DB version. AzerothCore DB structure is not supported!');
+                            {
+                                // EQWOW: AzerothCore world db is the supported target on this install
+                                $note = 'AzerothCore DB version @ ' . $vString;
+                                $ok   = true;
+                            }
                             else
                                 $note = CLI::yellow('DB test found unexpected vendor in expected version table. Uhh.. Good Luck..!?');
                         }

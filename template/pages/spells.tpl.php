@@ -84,6 +84,25 @@ endforeach;
                                 </tr></table>
                             </td>
                         </tr><tr>
+                            <!-- EQWOW: filter by EQ class and EQ learn level (learn levels come from spell scrolls) -->
+                            <td class="padded"><?=Lang::game('eqClass').Lang::main('colon'); ?></td>
+                            <td class="padded">&nbsp;<select name="eqc">
+                                <option></option>
+<?php
+foreach (Lang::game('eqcl') as $i => $str):
+    if ($str):
+        echo '                                <option value="'.$i.'"'.(isset($f['eqc']) && $f['eqc'] == $i ? ' selected' : null).'>'.$str."</option>\n";
+    endif;
+endforeach;
+?>
+                            </select></td>
+                            <td class="padded">
+                                <table cellpadding="0" cellspacing="0" border="0"><tr>
+                                    <td>&nbsp;&nbsp;&nbsp;<?=Lang::game('eqLearnLevel').Lang::main('colon'); ?></td>
+                                    <td>&nbsp;<input type="text" name="mineql" maxlength="2" class="smalltextbox" <?=(isset($f['mineql']) ? 'value="'.$f['mineql'].'" ' : null); ?>/> - <input type="text" name="maxeql" maxlength="2" class="smalltextbox" <?=(isset($f['maxeql']) ? 'value="'.$f['maxeql'].'" ' : null); ?>/></td>
+                                </tr></table>
+                            </td>
+                        </tr><tr>
                             <td class="padded"><?=Util::ucFirst(Lang::game('race')).Lang::main('colon'); ?></td>
                             <td class="padded">&nbsp;<select name="ra">
                                 <option></option>

@@ -17,7 +17,9 @@ class ZonesPage extends GenericPage
     protected $path      = [0, 6];
     protected $tabId     = 0;
     protected $mode      = CACHE_TYPE_PAGE;
-    protected $validCats = [true, true, [0, 1, 2], [0, 1, 2], false, false, true, false, true, true, true];
+    protected $validCats = [true, true, [0, 1, 2], [0, 1, 2], false, false, true, false, true, true, true,
+        // EQWOW: EverQuest continents (categories = continent map ids from mod_everquest_viewer_zone)
+        895 => true, 896 => true, 897 => true, 898 => true, 899 => true];
     protected $scripts   = [[SC_JS_FILE, 'js/ShowOnMap.js']];
 
     public function __construct($pageCall, $pageParam)

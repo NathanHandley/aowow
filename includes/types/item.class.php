@@ -2008,6 +2008,7 @@ class ItemListFilter extends Filter
         'na'    => [parent::V_REGEX,    parent::PATTERN_NAME,                            false], // name - only printable chars, no delimiter
         'ma'    => [parent::V_EQUAL,    1,                                               false], // match any / all filter
         'ub'    => [parent::V_LIST,     [[1, 9], 11],                                    false], // usable by classId
+        'ubeq'  => [parent::V_RANGE,    [1, 14],                                         false], // EQWOW: usable by EQ classId (1-14)
         'qu'    => [parent::V_RANGE,    [0, 7],                                          true ], // quality ids
         'ty'    => [parent::V_CALLBACK, 'cbTypeCheck',                                   true ], // item type - dynamic by current group
         'sl'    => [parent::V_CALLBACK, 'cbSlotCheck',                                   true ], // item slot - dynamic by current group
@@ -2139,6 +2140,13 @@ class ItemListFilter extends Filter
                     ['AND', ['class', ITEM_CLASS_ARMOR],  ['subclassbak', $this->ubFilter[$_v['ub']][ITEM_CLASS_ARMOR]]]
                 ]
             );
+        }
+
+        // EQWOW: usable by EQ class - masks copied from mod_everquest_item_template by sqlgen/everquest.ss.php
+        if (isset($_v['ubeq']))
+        {
+            $eqItemIds = DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($_v['ubeq'] - 1));
+            $parts[] = ['i.id', $eqItemIds ?: [0]];
         }
 
         // quality [list]

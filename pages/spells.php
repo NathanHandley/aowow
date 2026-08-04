@@ -44,6 +44,8 @@ class SpellsPage extends GenericPage
         -9  => true,                                        // GM Abilities
         -11 => [6, 8, 10],                                  // Proficiencies [Weapon, Armor, Language]
         -13 => [1, 2, 3, 4, 5, 6, 7, 8, 9, 11],             // Glyphs => Class (GlyphType via filter)
+        -15 => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // EQWOW: EQ Class Spells => EQ class id
+
         0   => true,                                        // Uncategorized
         7   => array(                                       // Abilities: Class => Skill
             1  => [ 26, 256, 257],
@@ -255,6 +257,17 @@ class SpellsPage extends GenericPage
                         $conditions[] = ['s.reqClassMask', 1 << ($this->category[1] - 1), '&'];
 
                     break;
+                case -15:                                   // EQWOW: EQ Class Spells - learn levels come from spell scrolls (?_everquest_spell_learn)
+                    array_push($visibleCols, 'level', 'schools');
+
+                    if (isset($this->category[1]))
+                        $eqSpellIds = DB::Aowow()->selectCol('SELECT `spellId` FROM ?_everquest_spell_learn WHERE `eqClass` = ?d', $this->category[1]);
+                    else
+                        $eqSpellIds = DB::Aowow()->selectCol('SELECT DISTINCT `spellId` FROM ?_everquest_spell_learn');
+
+                    $conditions[] = ['s.id', $eqSpellIds ?: [0]];
+
+                    break;
                 case 7:                                     // Abilities
                     $this->classPanel = true;
 
@@ -409,6 +422,16 @@ class SpellsPage extends GenericPage
                 else
                     $lvData[$spellId]['speed'] = '+'.$lvData[$spellId]['speed'].'%';
             }
+        }
+
+        // EQWOW: on EQ class listings, display the class' learn level (from spell scrolls) instead of the spell level
+        if ($this->category && $this->category[0] == -15 && isset($this->category[1]))
+        {
+            $eqLearn = DB::Aowow()->select('SELECT `spellId` AS ARRAY_KEY, `learnLevel` FROM ?_everquest_spell_learn WHERE `eqClass` = ?d', $this->category[1]);
+            foreach ($lvData as $spellId => &$lvRow)
+                if (isset($eqLearn[$spellId]))
+                    $lvRow['level'] = $eqLearn[$spellId]['learnLevel'];
+            unset($lvRow);
         }
 
         $tabData['data'] = array_values($lvData);

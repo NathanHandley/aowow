@@ -2442,7 +2442,10 @@ class SpellListFilter extends Filter
         'gl'    => [parent::V_CALLBACK, 'cbGlyphs',                                      true ], // glyph type
         'sc'    => [parent::V_RANGE,    [0, 6],                                          true ], // magic schools
         'dt'    => [parent::V_LIST,     [[1, 6], 9],                                     false], // dispel types
-        'me'    => [parent::V_RANGE,    [1, 31],                                         false]  // mechanics
+        'me'    => [parent::V_RANGE,    [1, 31],                                         false], // mechanics
+        'eqc'    => [parent::V_RANGE,   [1, 14],                                         false], // EQWOW: learnable by EQ classId (1-14)
+        'mineql' => [parent::V_RANGE,   [1, 99],                                         false], // EQWOW: EQ learn level min (from spell scrolls)
+        'maxeql' => [parent::V_RANGE,   [1, 99],                                         false]  // EQWOW: EQ learn level max (from spell scrolls)
     );
 
     protected function createSQLForValues()
@@ -2502,6 +2505,18 @@ class SpellListFilter extends Filter
         // mechanic
         if (isset($_v['me']))
             $parts[] = ['OR', ['mechanic', $_v['me']], ['effect1Mechanic', $_v['me']], ['effect2Mechanic', $_v['me']], ['effect3Mechanic', $_v['me']]];
+
+        // EQWOW: learnable by EQ class / EQ learn level range - learn levels come from spell scrolls (?_everquest_spell_learn)
+        if (isset($_v['eqc']) || isset($_v['mineql']) || isset($_v['maxeql']))
+        {
+            $eqSpellIds = DB::Aowow()->selectCol(
+                'SELECT DISTINCT `spellId` FROM ?_everquest_spell_learn WHERE 1 { AND `eqClass` = ?d } { AND `learnLevel` >= ?d } { AND `learnLevel` <= ?d }',
+                $_v['eqc']    ?? DBSIMPLE_SKIP,
+                $_v['mineql'] ?? DBSIMPLE_SKIP,
+                $_v['maxeql'] ?? DBSIMPLE_SKIP
+            );
+            $parts[] = ['s.id', $eqSpellIds ?: [0]];
+        }
 
         return $parts;
     }

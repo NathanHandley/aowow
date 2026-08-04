@@ -39,7 +39,8 @@ CLISetup::registerSetup("build", new class extends SetupScript
     private const AREA_FLAG_DEFAULT_FLOOR_TERRAIN = 0x004;  // Default Dungeon Floor is Terrain
     private const AREA_FLAG_NO_DEFAULT_FLOOR      = 0x100;  // Don't use Default Dungeon Floor (typically 1)
 
-    private const CONTINENTS = [0, 1, 530, 571];            // Map.dbc/id
+    private const CONTINENTS = [0, 1, 530, 571,             // Map.dbc/id
+        894, 895, 896, 897, 898, 899];                      // EQWOW: EverQuest continents (norrath, antonica, odus, faydwer, kunark, velious)
 
     private const DEST_DIRS = array(
         ['static/images/wow/maps/%snormal/',   488, 325],
