@@ -886,7 +886,7 @@ $lang = array(
             "Screenshot manager",           "Video manager",                "API partner",                  "Pending"
         ),
         // signIn
-        'doSignIn'      => "Log in to your AoWoW Account",
+        'doSignIn'      => "Log in to your EQWOW DB Viewer Account",
         'signIn'        => "Log In",
         'user'          => "Username",
         'pass'          => "Password",

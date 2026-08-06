@@ -722,7 +722,12 @@ class GenericPage
         $this->name       = Lang::main('errPageTitle');
         // $this->lvTabs     = [];
 
-        $this->addArticle();
+        // EQWOW: replace the stock 'page-not-found' joke article (AO-815 tooltip, contact/forum
+        // links) with a plain one-line notice. addArticle() early-returns when article is set.
+        $this->article = array(
+            'text'   => Util::jsEscape('This page was not found or there is an issue.'),
+            'params' => []
+        );
 
         $this->sumSQLStats();
 
