@@ -566,7 +566,7 @@ class QuestListFilter extends Filter
         if ($_ = DB::Aowow()->selectRow('SELECT * FROM ?_factions WHERE `id` = ?d', $crs))
             $this->formData['reputationCols'][] = [$crs, Util::localizedString($_, 'name')];
 
-        return [
+        $parts = [
             'OR',
             ['AND', ['rewardFactionId1', $crs], ['rewardFactionValue1', 0, $sign]],
             ['AND', ['rewardFactionId2', $crs], ['rewardFactionValue2', 0, $sign]],
@@ -574,6 +574,15 @@ class QuestListFilter extends Filter
             ['AND', ['rewardFactionId4', $crs], ['rewardFactionValue4', 0, $sign]],
             ['AND', ['rewardFactionId5', $crs], ['rewardFactionValue5', 0, $sign]]
         ];
+
+        // EQWOW begin - EverQuest quest reputation lives in mod_everquest_quest_complete_reputation
+        // (EQ quests have rewardFactionId* = 0), so match those quests by id
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_quest_complete_reputation"'))
+            if ($qIds = DB::World()->selectCol('SELECT `QuestTemplateID` FROM mod_everquest_quest_complete_reputation WHERE `FactionID` = ?d AND `CompletionRewardValue` '.($sign == '<' ? '<' : '>').' 0', $crs))
+                $parts[] = ['id', $qIds];
+        // EQWOW end
+
+        return $parts;
     }
 
     protected function cbQuestRelation(int $cr, int $crs, string $crv, $flags) : ?array

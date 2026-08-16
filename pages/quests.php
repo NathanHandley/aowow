@@ -69,6 +69,19 @@ class QuestsPage extends GenericPage
 
         $tabData = ['data' => array_values($quests->getListviewData())];
 
+        // EQWOW begin - merge EverQuest quest reputation into the rows (EQ quests have
+        // rewardFactionId* = 0) so the filter's reputation column shows their values
+        if ($rCols && $tabData['data'] && DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_quest_complete_reputation"'))
+        {
+            $eqRep = DB::World()->selectCol('SELECT `QuestTemplateID` AS ARRAY_KEY, `FactionID` AS ARRAY_KEY2, `CompletionRewardValue` FROM mod_everquest_quest_complete_reputation WHERE `QuestTemplateID` IN (?a)', array_column($tabData['data'], 'id'));
+            foreach ($tabData['data'] as &$row)
+                if (!empty($eqRep[$row['id']]))
+                    foreach ($eqRep[$row['id']] as $facId => $val)
+                        $row['reprewards'][] = [$facId, $val];
+            unset($row);
+        }
+        // EQWOW end
+
         if ($rCols)
             $tabData['extraCols'] = '$fi_getReputationCols('.json_encode($rCols, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE).')';
         else if ($xCols)

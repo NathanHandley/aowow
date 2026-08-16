@@ -514,7 +514,14 @@ class CreatureListFilter extends Filter
         if ($_ = DB::Aowow()->selectRow('SELECT * FROM ?_factions WHERE `id` = ?d', $crs))
             $this->formData['reputationCols'][] = [$crs, Util::localizedString($_, 'name')];
 
-        if ($cIds = DB::World()->selectCol('SELECT `creature_id` FROM creature_onkill_reputation WHERE (`RewOnKillRepFaction1` = ?d AND `RewOnKillRepValue1` '.$op.' 0) OR (`RewOnKillRepFaction2` = ?d AND `RewOnKillRepValue2` '.$op.' 0)', $crs, $crs))
+        $cIds = DB::World()->selectCol('SELECT `creature_id` FROM creature_onkill_reputation WHERE (`RewOnKillRepFaction1` = ?d AND `RewOnKillRepValue1` '.$op.' 0) OR (`RewOnKillRepFaction2` = ?d AND `RewOnKillRepValue2` '.$op.' 0)', $crs, $crs);
+
+        // EQWOW begin - EverQuest kill reputation lives in mod_everquest_creature_onkill_reputation
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_creature_onkill_reputation"'))
+            $cIds = array_merge($cIds, DB::World()->selectCol('SELECT `CreatureTemplateID` FROM mod_everquest_creature_onkill_reputation WHERE `FactionID` = ?d AND `KillRewardValue` '.($op == '<' ? '<' : '>').' 0', $crs));
+        // EQWOW end
+
+        if ($cIds)
             return ['id', $cIds];
         else
             return [0];

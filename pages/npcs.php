@@ -72,6 +72,19 @@ class NpcsPage extends GenericPage
 
         $tabData = ['data' => array_values($npcs->getListviewData($rCols ? NPCINFO_REP : 0x0))];
 
+        // EQWOW begin - merge EverQuest kill reputation into the rows (EQ creatures have no
+        // creature_onkill_reputation entries) so the filter's reputation column shows their values
+        if ($rCols && $tabData['data'] && DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_creature_onkill_reputation"'))
+        {
+            $eqRep = DB::World()->selectCol('SELECT `CreatureTemplateID` AS ARRAY_KEY, `FactionID` AS ARRAY_KEY2, `KillRewardValue` FROM mod_everquest_creature_onkill_reputation WHERE `KillRewardValue` <> 0 AND `CreatureTemplateID` IN (?a)', array_column($tabData['data'], 'id'));
+            foreach ($tabData['data'] as &$row)
+                if (!empty($eqRep[$row['id']]))
+                    foreach ($eqRep[$row['id']] as $facId => $val)
+                        $row['reprewards'][] = [$facId, $val];
+            unset($row);
+        }
+        // EQWOW end
+
         if ($rCols)                                         // never use pretty-print
             $tabData['extraCols'] = '$fi_getReputationCols('.Util::toJSON($rCols, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE).')';
         else if ($xCols)

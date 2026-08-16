@@ -174,6 +174,27 @@ class Game
         null,   4,      10,     9,      8,      6,      15,     11,     3,      5,      null,   7
     );
 
+    // EQWOW begin - id => name lists used to extend the hardcoded stock-WoW filter dropdowns
+    // (template/bricks/filter.tpl.php) and enum whitelists (Filter::__construct) with EverQuest data
+    public static function eqFilterZones() : array
+    {
+        static $zones = null;
+        if ($zones === null)
+            $zones = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_zones WHERE `id` >= 5100 AND `parentArea` = 0 ORDER BY `name_loc0`');
+
+        return $zones;
+    }
+
+    public static function eqFilterFactions() : array
+    {
+        static $factions = null;
+        if ($factions === null)
+            $factions = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_factions WHERE `parentFactionId` = 1200 ORDER BY `name_loc0`');
+
+        return $factions;
+    }
+    // EQWOW end
+
     public static function getReputationLevelForPoints($pts)
     {
         if ($pts >= 41999)

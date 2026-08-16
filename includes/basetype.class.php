@@ -993,6 +993,17 @@ abstract class Filter
     // parse the provided request into a usable format
     public function __construct(bool $fromPOST = false, array $opts = [])
     {
+        // EQWOW begin - ENUM_FACTION / ENUM_ZONE above are hardcoded stock-WoW lists; extend any
+        // criterium using them with the EverQuest ids the extended dropdowns offer
+        foreach ($this->enums as $cr => $list)
+        {
+            if ($list === self::ENUM_FACTION)
+                $this->enums[$cr] = array_merge($list, array_keys(Game::eqFilterFactions()));
+            else if ($list === self::ENUM_ZONE)
+                $this->enums[$cr] = array_merge($list, array_keys(Game::eqFilterZones()));
+        }
+        // EQWOW end
+
         if (!empty($opts['parentCats']))
             $this->parentCats = $opts['parentCats'];
 
