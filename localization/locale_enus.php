@@ -1071,6 +1071,9 @@ $lang = array(
         'spawnPoolPerPoint' => "each point picks one NPC independently",
         'spawnPoolCycle'    => "spawn cycle: a replacement pops at a different point ~%s after a death",
         'spawnPoolShare'    => "holds %d of %d points",
+        'spawnPoolsZone'    => "NPCs sharing pooled spawn points in this zone. Percentages are the chance to fill a slot each time it repopulates - hover over the pool number for details.",
+        'spawnPoolCol'      => "Pool",
+        'spawnPoolChanceCol'=> "Chance",
         // EQWOW end
         'tameable'      => "Tameable (%s)",
         'spirit'        => "[tooltip name=spirit]Only visible to dead players[/tooltip][span class=tip tooltip=spirit]Spirit[/span]",

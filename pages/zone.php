@@ -531,6 +531,100 @@ class ZonePage extends GenericPage
             $this->lvTabs[] = [CreatureList::$brickFile, $tabData];
         }
 
+        // EQWOW begin - tab: spawn pools. EQ spawn groups with members in this zone, one row per
+        // (group, candidate NPC). Chance semantics mirror the NPC page block (see pages/npc.php).
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_creature_spawn_point"'))
+        {
+            if ($eqGroupIds = DB::World()->selectCol('SELECT DISTINCT sp.`SpawnGroupID` FROM mod_everquest_creature_spawn_point sp JOIN creature c ON c.`guid` = sp.`CreatureGUID` WHERE c.`zoneId` = ?d', $this->typeId))
+            {
+                $eqGroups = DB::World()->select(
+                   'SELECT   `SpawnGroupID` AS ARRAY_KEY, COUNT(DISTINCT `SpawnPointID`) AS `points`, MAX(`SpawnGroupLimit`) AS `limit`, MAX(`CycleRespawnTimeSec`) AS `cycleRespawn`
+                    FROM     mod_everquest_creature_spawn_point
+                    WHERE    `SpawnGroupID` IN (?a)
+                    GROUP BY `SpawnGroupID`', $eqGroupIds
+                );
+                $eqMembers = DB::World()->select(
+                   'SELECT    sp.`SpawnGroupID` AS `groupId`, c.`id` AS `npcId`, COUNT(DISTINCT sp.`SpawnPointID`) AS `points`,
+                              MAX(sp.`CycleChance`) AS `cycleChance`, MAX(IFNULL(pc.`chance`, 0)) AS `poolChance`
+                    FROM      mod_everquest_creature_spawn_point sp
+                    JOIN      creature c ON c.`guid` = sp.`CreatureGUID`
+                    LEFT JOIN pool_creature pc ON pc.`guid` = sp.`CreatureGUID`
+                    WHERE     sp.`SpawnGroupID` IN (?a)
+                    GROUP BY  sp.`SpawnGroupID`, c.`id`', $eqGroupIds
+                );
+
+                $eqPoolNPCData = [];
+                if ($_ = array_values(array_unique(array_column($eqMembers, 'npcId'))))
+                {
+                    $eqPoolNPCs = new CreatureList(array(Cfg::get('SQL_LIMIT_NONE'), ['id', $_]));
+                    if (!$eqPoolNPCs->error)
+                    {
+                        $eqPoolNPCData = $eqPoolNPCs->getListviewData();
+                        $this->extendGlobalData($eqPoolNPCs->getJSGlobals(GLOBALINFO_SELF));
+                    }
+                }
+
+                $eqPoolRows = [];
+                foreach ($eqGroups as $groupId => $g)
+                {
+                    $rows    = array_filter($eqMembers, function ($m) use ($groupId) { return $m['groupId'] == $groupId; });
+                    $isCycle = $g['cycleRespawn'] > 0;
+                    $mode    = $isCycle ? 'cycle' : ($g['limit'] > 0 ? 'capped' : 'weighted');
+
+                    // group summary, shown as tooltip on the pool column
+                    $note = sprintf(Lang::npc('spawnPoolPoints'), $g['points']);
+                    if ($mode == 'weighted' && $g['points'] > 1)
+                        $note .= ', '.Lang::npc('spawnPoolPerPoint');
+                    else if ($mode != 'weighted')
+                        $note .= ', '.sprintf(Lang::npc('spawnPoolLimit'), $isCycle ? max(1, $g['limit']) : $g['limit']);
+                    if ($isCycle)
+                        $note .= ' ('.sprintf(Lang::npc('spawnPoolCycle'), Util::formatTime($g['cycleRespawn'] * 1000, true)).')';
+
+                    // members without an explicit roll share what the explicit rolls leave over (AC pool semantics)
+                    $sumExplicit = 0;
+                    $nEqual      = 0;
+                    foreach ($rows as $m)
+                    {
+                        $sumExplicit += $m['poolChance'];
+                        if (!$m['poolChance'])
+                            $nEqual++;
+                    }
+                    $equalChance = $nEqual ? max(0, 100 - $sumExplicit) / $nEqual : 0;
+
+                    foreach ($rows as $m)
+                    {
+                        if (empty($eqPoolNPCData[$m['npcId']]))
+                            continue;
+
+                        switch ($mode)
+                        {
+                            case 'cycle':  [$chance, $approx] = [$m['cycleChance'], false];                                break;
+                            case 'capped': [$chance, $approx] = [100 * $m['points'] / max(1, $g['points']), true];         break;
+                            default:       [$chance, $approx] = $m['poolChance'] ? [$m['poolChance'], false] : [$equalChance, true];
+                        }
+
+                        $row = $eqPoolNPCData[$m['npcId']];
+                        $row['eqPool']     = $groupId;
+                        $row['eqPoolNote'] = $note.($mode == 'capped' && count($rows) > 1 ? ' - '.sprintf(Lang::npc('spawnPoolShare'), $m['points'], $g['points']) : '');
+                        $row['eqChance']   = round($chance, 1);
+                        $row['eqApprox']   = $approx ? 1 : 0;
+                        $eqPoolRows[]      = $row;
+                    }
+                }
+
+                if ($eqPoolRows)
+                    $this->lvTabs[] = [CreatureList::$brickFile, array(
+                        'data'      => $eqPoolRows,
+                        'name'      => Lang::npc('spawnPools'),
+                        'id'        => 'spawn-pools',
+                        'extraCols' => '$_',
+                        'sort'      => ['pool', '-chance', 'name'],
+                        'note'      => Lang::npc('spawnPoolsZone')
+                    ), 'zoneSpawnPoolCols'];
+            }
+        }
+        // EQWOW end
+
         // tab: Objects
         if ($oSpawns && !$objectSpawns->error)
         {
