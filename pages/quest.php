@@ -1316,6 +1316,24 @@ class QuestPage extends GenericPage
             $gains['rep'][] = $rep;
         }
 
+        // EQWOW begin - EverQuest faction hits on completion (mod_everquest_quest_complete_reputation)
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_quest_complete_reputation"'))
+        {
+            $eqRows = DB::World()->select('SELECT `FactionID` AS "faction", `CompletionRewardValue` AS "qty" FROM mod_everquest_quest_complete_reputation WHERE `QuestTemplateID` = ?d ORDER BY `SortOrder`', $this->typeId);
+            foreach ($eqRows as $row)
+            {
+                if (!($name = FactionList::getName($row['faction'])))
+                    continue;
+
+                $gains['rep'][] = array(
+                    'qty'  => [$row['qty'], 0],
+                    'id'   => $row['faction'],
+                    'name' => $name
+                );
+            }
+        }
+        // EQWOW end
+
         // title
         if ($_ = (new TitleList(array(['id', $this->subject->getField('rewardTitleId')])))->getHtmlizedName())
             $gains['title'] = $_;

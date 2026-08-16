@@ -277,6 +277,49 @@ class FactionPage extends GenericPage
             $this->lvTabs[] = [QuestList::$brickFile, $tabData, 'questRepCol'];
         }
 
+        // EQWOW begin - EverQuest faction hits (gains and losses) from mod_everquest_* reputation tables
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_creature_onkill_reputation"'))
+        {
+            // tab: creatures whose kill affects this faction
+            if ($cRep = DB::World()->selectCol('SELECT `CreatureTemplateID` AS ARRAY_KEY, `KillRewardValue` FROM mod_everquest_creature_onkill_reputation WHERE `FactionID` = ?d AND `KillRewardValue` <> 0', $this->typeId))
+            {
+                $killCreatures = new CreatureList(array(Cfg::get('SQL_LIMIT_NONE'), ['id', array_keys($cRep)]), ['calcTotal' => true]);
+                if (!$killCreatures->error)
+                {
+                    $data = $killCreatures->getListviewData();
+                    foreach ($data as $id => &$d)
+                        $d['reputation'] = $cRep[$id];
+
+                    $this->lvTabs[] = [CreatureList::$brickFile, array(
+                        'data'      => array_values($data),
+                        'extraCols' => '$_',
+                        'sort'      => ['-reputation', 'name']
+                    ), 'npcRepCol'];
+                }
+            }
+
+            // tab: quests whose completion affects this faction
+            if ($qRep = DB::World()->selectCol('SELECT `QuestTemplateID` AS ARRAY_KEY, `CompletionRewardValue` FROM mod_everquest_quest_complete_reputation WHERE `FactionID` = ?d', $this->typeId))
+            {
+                $eqQuests = new QuestList(array(Cfg::get('SQL_LIMIT_NONE'), ['id', array_keys($qRep)]), ['calcTotal' => true]);
+                if (!$eqQuests->error)
+                {
+                    $this->extendGlobalData($eqQuests->getJSGlobals(GLOBALINFO_ANY));
+
+                    $data = $eqQuests->getListviewData();
+                    foreach ($data as $id => &$d)
+                        $d['reputation'] = $qRep[$id];
+
+                    $this->lvTabs[] = [QuestList::$brickFile, array(
+                        'data'      => array_values($data),
+                        'extraCols' => '$_',
+                        'sort'      => ['-reputation', 'name']
+                    ), 'questRepCol'];
+                }
+            }
+        }
+        // EQWOW end
+
         // tab: achievements
         $conditions = array(
             ['ac.type', ACHIEVEMENT_CRITERIA_TYPE_GAIN_REPUTATION],

@@ -1111,6 +1111,33 @@ class NpcPage extends GenericPage
             }
         }
 
+        // EQWOW begin - EverQuest faction hits on kill (mod_everquest_creature_onkill_reputation)
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_creature_onkill_reputation"'))
+        {
+            if ($eqRows = DB::World()->select('SELECT `FactionID` AS "faction", `KillRewardValue` AS "qty" FROM mod_everquest_creature_onkill_reputation WHERE `CreatureTemplateID` = ?d AND `KillRewardValue` <> 0 ORDER BY `SortOrder`', $this->typeId))
+            {
+                $eqFactions = new FactionList(array(['id', array_column($eqRows, 'faction')]));
+                $eqSet      = [];
+
+                foreach ($eqRows as $row)
+                {
+                    if (!$eqFactions->getEntry($row['faction']))
+                        continue;
+
+                    $eqSet[] = array(
+                        'id'   => $row['faction'],
+                        'qty'  => [$row['qty'], 0],
+                        'name' => $eqFactions->getField('name', true),
+                        'cap'  => null
+                    );
+                }
+
+                if ($eqSet)
+                    $reputation[] = ['EverQuest', $eqSet];
+            }
+        }
+        // EQWOW end
+
         return $reputation;
     }
 
