@@ -98,6 +98,35 @@ if ($this->reputation):
     endforeach;
 endif;
 
+// EQWOW begin - spawn pools with spawn rates
+if ($this->spawnPools):
+?>
+                <h3><?=Lang::npc('spawnPools'); ?></h3>
+<?php
+    echo '                '.Lang::npc('spawnPoolsDesc').Lang::main('colon')."\n";
+
+    foreach ($this->spawnPools as $pool):
+        $head = '<a href="?zone='.$pool['areaId'].'">'.$pool['zone'].'</a> &ndash; '.sprintf(Lang::npc('spawnPoolPoints'), $pool['points']);
+        if ($pool['mode'] == 'weighted' && $pool['points'] > 1)
+            $head .= ', '.Lang::npc('spawnPoolPerPoint');
+        else if ($pool['mode'] != 'weighted')
+            $head .= ', '.sprintf(Lang::npc('spawnPoolLimit'), $pool['limit']);
+        if ($pool['mode'] == 'cycle')
+            $head .= ' ('.sprintf(Lang::npc('spawnPoolCycle'), Util::formatTime($pool['cycleRespawn'] * 1000, true)).')';
+
+        echo '                <ul><li><div>'.$head.'</div><ul>'."\n";
+        foreach ($pool['members'] as $m):
+            $pct  = ($m['approx'] ? '~' : null).round($m['chance'], 1).'%';
+            $line = '<span>'.$pct.'</span> &ndash; <a href="?npc='.$m['npcId'].'">'.$m['name'].'</a>';
+            if ($pool['mode'] == 'capped' && count($pool['members']) > 1)
+                $line .= ' ('.sprintf(Lang::npc('spawnPoolShare'), $m['points'], $pool['points']).')';
+            echo '                    <li><div>'.($m['self'] ? '<b>'.$line.'</b>' : $line).'</div></li>'."\n";
+        endforeach;
+        echo '                </ul></li></ul>'."\n";
+    endforeach;
+endif;
+// EQWOW end
+
 if (isset($this->smartAI)):
 ?>
     <div id="text-generic" class="left"></div>

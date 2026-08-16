@@ -1063,6 +1063,15 @@ $lang = array(
         'armor'         => "Armor",
         'resistances'   => "Resistances",
         'foundIn'       => "This NPC can be found in",
+        // EQWOW begin - spawn pool display
+        'spawnPools'        => "Spawn Pools",
+        'spawnPoolsDesc'    => "This NPC is part of a spawn pool. Percentages are the chance to be picked each time a spawn slot repopulates",
+        'spawnPoolPoints'   => "%d spawn point(s)",
+        'spawnPoolLimit'    => "up to %d alive at once",
+        'spawnPoolPerPoint' => "each point picks one NPC independently",
+        'spawnPoolCycle'    => "spawn cycle: a replacement pops at a different point ~%s after a death",
+        'spawnPoolShare'    => "holds %d of %d points",
+        // EQWOW end
         'tameable'      => "Tameable (%s)",
         'spirit'        => "[tooltip name=spirit]Only visible to dead players[/tooltip][span class=tip tooltip=spirit]Spirit[/span]",
         'waypoint'      => "Waypoint",

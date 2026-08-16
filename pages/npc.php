@@ -14,6 +14,7 @@ class NpcPage extends GenericPage
     protected $accessory    = [];
     protected $quotes       = [];
     protected $reputation   = [];
+    protected $spawnPools   = [];                           // EQWOW - spawn pool display
     protected $subname      = '';
 
     protected $type          = Type::NPC;
@@ -126,7 +127,8 @@ class NpcPage extends GenericPage
         $infobox = Lang::getInfoBoxForFlags($this->subject->getField('cuFlags'));
 
         // Event (ignore events, where the object only gets removed)
-        if ($_ = DB::World()->selectCol('SELECT DISTINCT ge.`eventEntry` FROM game_event ge, game_event_creature gec, creature c WHERE ge.`eventEntry` = gec.`eventEntry` AND c.`guid` = gec.`guid` AND c.`id` = ?d', $this->typeId))
+        // EQWOW - also resolve events attached to pooled spawns via game_event_pool (the converter gates whole spawn pools behind events)
+        if ($_ = DB::World()->selectCol('SELECT DISTINCT ge.`eventEntry` FROM game_event ge, game_event_creature gec, creature c WHERE ge.`eventEntry` = gec.`eventEntry` AND c.`guid` = gec.`guid` AND c.`id` = ?d UNION SELECT DISTINCT ge.`eventEntry` FROM game_event ge, game_event_pool gep, pool_creature pc, creature c WHERE ge.`eventEntry` = gep.`eventEntry` AND gep.`pool_entry` = pc.`pool_entry` AND pc.`guid` = c.`guid` AND c.`id` = ?d', $this->typeId, $this->typeId))
         {
             $this->extendGlobalIds(Type::WORLDEVENT, ...$_);
             $ev = [];
@@ -398,10 +400,105 @@ class NpcPage extends GenericPage
         }
 
         // consider pooled spawns
+        // EQWOW begin - spawn pools with spawn rates
+        // EQWOW uses custom spawn group logic (see EQWOWConverter SQLScriptWorker::PopulateCreatureData).
+        // mod_everquest_creature_spawn_point ties creature guids to EQ spawn groups in three shapes:
+        //  - cycle groups (SpawnGroupLimit > 0, CycleRespawnTimeSec > 0): every candidate is spawned at every
+        //    point; the mod culls to the limit and re-rolls point + candidate on death (CycleChance in pct).
+        //  - capped groups (SpawnGroupLimit > 0): one AC pool keeps SpawnGroupLimit alive; each point holds one
+        //    fixed candidate and the pool re-rolls points uniformly, so a candidate's rate is its share of points.
+        //  - uncapped weighted groups (SpawnGroupLimit = 0): each point is its own 1-alive AC pool over all
+        //    candidates; pool_creature.chance > 0 rolls explicitly, 0 shares the remainder equally.
+        $spawnPools = [];
+        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_creature_spawn_point"'))
+        {
+            if ($groupIds = DB::World()->selectCol('SELECT DISTINCT sp.`SpawnGroupID` FROM mod_everquest_creature_spawn_point sp JOIN creature c ON c.`guid` = sp.`CreatureGUID` WHERE c.`id` = ?d', $this->typeId))
+            {
+                $groups = DB::World()->select(
+                   'SELECT   `SpawnGroupID` AS ARRAY_KEY, COUNT(DISTINCT `SpawnPointID`) AS `points`, MAX(`SpawnGroupLimit`) AS `limit`, MAX(`CycleRespawnTimeSec`) AS `cycleRespawn`
+                    FROM     mod_everquest_creature_spawn_point
+                    WHERE    `SpawnGroupID` IN (?a)
+                    GROUP BY `SpawnGroupID`', $groupIds
+                );
+                $members = DB::World()->select(
+                   'SELECT    sp.`SpawnGroupID` AS `groupId`, c.`id` AS `npcId`, COUNT(DISTINCT sp.`SpawnPointID`) AS `points`,
+                              MAX(sp.`CycleChance`) AS `cycleChance`, MAX(IFNULL(pc.`chance`, 0)) AS `poolChance`, MAX(c.`zoneId`) AS `areaId`
+                    FROM      mod_everquest_creature_spawn_point sp
+                    JOIN      creature c ON c.`guid` = sp.`CreatureGUID`
+                    LEFT JOIN pool_creature pc ON pc.`guid` = sp.`CreatureGUID`
+                    WHERE     sp.`SpawnGroupID` IN (?a)
+                    GROUP BY  sp.`SpawnGroupID`, c.`id`', $groupIds
+                );
+
+                $memberNames = [];
+                if ($_ = array_values(array_unique(array_column($members, 'npcId'))))
+                {
+                    $poolNPCs = new CreatureList(array(['id', $_]));
+                    foreach ($poolNPCs->iterate() as $id => $__)
+                        $memberNames[$id] = $poolNPCs->getField('name', true);
+                }
+
+                foreach ($groups as $groupId => $g)
+                {
+                    $rows    = array_filter($members, function ($m) use ($groupId) { return $m['groupId'] == $groupId; });
+                    $isCycle = $g['cycleRespawn'] > 0;
+                    $mode    = $isCycle ? 'cycle' : ($g['limit'] > 0 ? 'capped' : 'weighted');
+
+                    // members without an explicit roll share what the explicit rolls leave over (AC pool semantics)
+                    $sumExplicit = 0;
+                    $nEqual      = 0;
+                    foreach ($rows as $m)
+                    {
+                        $sumExplicit += $m['poolChance'];
+                        if (!$m['poolChance'])
+                            $nEqual++;
+                    }
+                    $equalChance = $nEqual ? max(0, 100 - $sumExplicit) / $nEqual : 0;
+
+                    $areaId = 0;
+                    $mems   = [];
+                    foreach ($rows as $m)
+                    {
+                        $areaId = $m['areaId'];
+                        switch ($mode)
+                        {
+                            case 'cycle':  [$chance, $approx] = [$m['cycleChance'], false];                                break;
+                            case 'capped': [$chance, $approx] = [100 * $m['points'] / max(1, $g['points']), true];         break;
+                            default:       [$chance, $approx] = $m['poolChance'] ? [$m['poolChance'], false] : [$equalChance, true];
+                        }
+                        $mems[] = array(
+                            'npcId'  => $m['npcId'],
+                            'name'   => $memberNames[$m['npcId']] ?? Util::ucFirst(Lang::game('npc')).' #'.$m['npcId'],
+                            'chance' => $chance,
+                            'approx' => $approx,
+                            'points' => $m['points'],
+                            'self'   => $m['npcId'] == $this->typeId
+                        );
+                    }
+
+                    usort($mems, function ($a, $b) { return ($b['chance'] <=> $a['chance']) ?: strcmp($a['name'], $b['name']); });
+
+                    $spawnPools[] = array(
+                        'areaId'       => $areaId,
+                        'zone'         => ZoneList::getName($areaId),
+                        'points'       => $g['points'],
+                        'limit'        => $isCycle ? max(1, $g['limit']) : $g['limit'],
+                        'mode'         => $mode,
+                        'cycleRespawn' => $g['cycleRespawn'],
+                        'members'      => $mems
+                    );
+                }
+
+                usort($spawnPools, function ($a, $b) { return strcmp($a['zone'], $b['zone']); });
+            }
+        }
+        // EQWOW end
+
         $this->map          = $map;
         $this->infobox      = '[ul][li]'.implode('[/li][li]', $infobox).'[/li][/ul]';
         $this->placeholder  = $placeholder;
         $this->accessory    = $accessory;
+        $this->spawnPools   = $spawnPools;                  // EQWOW - spawn pool display
         $this->quotes       = $this->getQuotes();
         $this->reputation   = $this->getOnKillRep($_altIds, $mapType);
         $this->smartAI      = $sai ? $sai->getMarkdown() : null;

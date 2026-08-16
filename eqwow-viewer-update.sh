@@ -41,7 +41,12 @@ cp -rf "$EXPORTS/MPQReady/Interface/WorldMap/." "$WMAP_DIR/"
 
 echo "[2/4] Regenerating aowow database (php aowow --sql) - this takes a while"
 cd "$AOWOW"
+# aowow only reloads dbc_* cache tables when they are missing - drop them so the
+# freshly overlaid DBCs are actually re-read (otherwise --sql runs on stale client data)
+"$PHP" eqwow-drop-dbc-cache.php
 "$PHP" aowow --sql
+# talent calculator tooltips live in static dataset files, not the db - always rebuild (fast)
+"$PHP" aowow --build=talentcalc --force || echo "WARNING: --build=talentcalc reported errors (continuing)"
 
 if [ "$QUICK" = "1" ]; then
     echo "[3/4] Skipping image regeneration (--quick)"
