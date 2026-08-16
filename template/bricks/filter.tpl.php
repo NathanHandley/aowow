@@ -1,11 +1,12 @@
             <script type="text/javascript">//<![CDATA[
 <?php
 // EQWOW begin - LANG.fidropdowns.zone / .faction in the static locale js only contain stock WoW
-// entries; append the EverQuest zones and factions as an own optgroup ([null, label] starts a group)
+// entries; group them as "Azeroth" and append the EverQuest zones as an own "Norrath" optgroup
+// ([null, label] starts a group), the EverQuest factions as an "EverQuest" optgroup
 $eqZones    = array_map(null, array_keys(Game::eqFilterZones()),    array_values(Game::eqFilterZones()));
 $eqFactions = array_map(null, array_keys(Game::eqFilterFactions()), array_values(Game::eqFilterFactions()));
 echo "                (function (z, f) {\n";
-echo "                    if (z.length) { LANG.fidropdowns.zone.push([null, 'EverQuest']); LANG.fidropdowns.zone.push.apply(LANG.fidropdowns.zone, z); }\n";
+echo "                    if (z.length) { LANG.fidropdowns.zone.unshift([null, 'Azeroth']); LANG.fidropdowns.zone.push([null, 'Norrath']); LANG.fidropdowns.zone.push.apply(LANG.fidropdowns.zone, z); }\n";
 echo "                    if (f.length) { LANG.fidropdowns.faction.push([null, 'EverQuest']); LANG.fidropdowns.faction.push.apply(LANG.fidropdowns.faction, f); }\n";
 echo "                })(".Util::toJSON($eqZones).", ".Util::toJSON($eqFactions).");\n";
 // EQWOW end
