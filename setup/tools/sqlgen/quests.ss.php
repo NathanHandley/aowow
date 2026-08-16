@@ -111,17 +111,21 @@ CLISetup::registerSetup("sql", new class extends SetupScript
             LEFT JOIN quest_template_addon qa ON q.ID = qa.ID
             LEFT JOIN game_event_seasonal_questrelation gesqr ON gesqr.questId = q.ID
             LEFT JOIN disables d ON d.entry = q.ID AND d.sourceType = 1
-          { WHERE     q.Id IN (?a) }
-            LIMIT     ?d, ?d';
+            WHERE     q.ID > ?d                             -- EQWOW - keyset pagination instead of quadratic LIMIT offset
+          { AND       q.Id IN (?a) }
+            ORDER BY  q.ID
+            LIMIT     ?d';
 
         $i = 0;
+        $lastId = 0;                                        // EQWOW - keyset pagination
         DB::Aowow()->query('TRUNCATE ?_quests');
-        while ($quests = DB::World()->select($baseQuery, $ids ?: DBSIMPLE_SKIP, CLISetup::SQL_BATCH * $i, CLISetup::SQL_BATCH))
+        while ($quests = DB::World()->select($baseQuery, $lastId, $ids ?: DBSIMPLE_SKIP, CLISetup::SQL_BATCH))
         {
             CLI::write(' * batch #' . ++$i . ' (' . count($quests) . ')', CLI::LOG_BLANK, true, true);
+            $lastId = (int)end($quests)['ID'];              // EQWOW - keyset pagination
 
-            foreach ($quests as $quest)
-                DB::Aowow()->query('INSERT INTO ?_quests VALUES (?a)', array_values($quest));
+            // EQWOW - one multi-row insert per batch instead of per-row queries
+            DB::Aowow()->query('INSERT IGNORE INTO ?_quests VALUES (?a)', array_map('array_values', array_values($quests)));
         }
 
         /*

@@ -36,8 +36,9 @@ CLISetup::registerSetup("sql", new class extends SetupScript
             CLI::write(' - ' . $n . ' start/end-points', CLI::LOG_BLANK, true, true);
 
             $data = DB::World()->select($q);
-            foreach ($data as $d)
-                DB::Aowow()->query('INSERT INTO ?_quests_startend (?#) VALUES (?a) ON DUPLICATE KEY UPDATE `method` = `method` | ?d, `eventId` = IF(`eventId` = 0, ?d, `eventId`)', array_keys($d), array_values($d), $d['method'], $d['eventId']);
+            // EQWOW - batched multi-row insert; VALUES() references the per-row values like the former per-row query did
+            foreach (array_chunk($data, 1000) as $chunk)
+                DB::Aowow()->query('INSERT INTO ?_quests_startend (?#) VALUES (?a) ON DUPLICATE KEY UPDATE `method` = `method` | VALUES(`method`), `eventId` = IF(`eventId` = 0, VALUES(`eventId`), `eventId`)', array_keys($chunk[0]), array_map('array_values', $chunk));
         }
 
         // update quests without start as unavailable

@@ -89,6 +89,7 @@ CLISetup::registerUtility(new class extends UtilityScript
             $scriptRef = &$this->generators[$cmd];
 
             CLI::write('[sql] filling aowow_'.$cmd.' with data');
+            $genStart = microtime(true);                    // EQWOW - report per-script duration
 
             if ($scriptRef->fulfillRequirements())
             {
@@ -106,7 +107,7 @@ CLISetup::registerUtility(new class extends UtilityScript
             else
                 $done[] = $cmd;
 
-            CLI::write('[sql] subscript \''.$cmd.'\' returned '.($success ? 'successfully' : 'with errors'), $success ? CLI::LOG_OK : CLI::LOG_ERROR);
+            CLI::write('[sql] subscript \''.$cmd.'\' returned '.($success ? 'successfully' : 'with errors').sprintf(' after %.1fs', microtime(true) - $genStart), $success ? CLI::LOG_OK : CLI::LOG_ERROR);   // EQWOW - duration added
             CLI::write();
             set_time_limit($this->defaultExecTime);         // reset to default for the next script
         }

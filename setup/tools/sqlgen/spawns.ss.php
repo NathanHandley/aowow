@@ -28,6 +28,18 @@ CLISetup::registerSetup("sql", new class extends SetupScript
     private $transports         = [];
     private $overrideData       = [];
 
+    // EQWOW begin - performance caches: EQWOW has ~3M waypoint rows; the stock per-row queries
+    // (Game::worldPosToZonePos + fallback lookups + single-row REPLACE) took hours. The map
+    // rectangles only depend on (map, area, floor), so they are fetched once per combination
+    // and the per-point math runs in php; writes are batched into multi-row REPLACEs.
+    private $zoneRectCache      = [];
+    private $zoneParentCache    = [];
+    private $mapZoneCache       = [];
+    private $writeTable         = '';
+    private $writeCols          = [];
+    private $writeBuffer        = [];
+    // EQWOW end
+
     private $steps = array(
         0x01 => ['creature',     Type::NPC,         false, '`creature` spawns',                                                 ],
         0x02 => ['gameobject',   Type::OBJECT,      false, '`gameobject` spawns',                                               ],
@@ -141,14 +153,16 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                 if (!$isWP)                                 // REPLACE: because there is bogus data where one path may be assigned to multiple npcs
                 {
                     unset($set['map']);
-                    DB::Aowow()->query('REPLACE INTO ?_spawns (?#) VALUES (?a)', array_keys($set), array_values($set));
+                    $this->bufferWrite('?_spawns', $set);   // EQWOW - batched write
                 }
                 else
                 {
                     unset($set['map'], $set['guid']);
-                    DB::Aowow()->query('REPLACE INTO ?_creature_waypoints (?#) VALUES (?a)', array_keys($set), array_values($set));
+                    $this->bufferWrite('?_creature_waypoints', $set);   // EQWOW - batched write
                 }
             }
+
+            $this->flushWrites();                           // EQWOW - the accessory pass below reads ?_spawns
         }
 
 
@@ -290,6 +304,111 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         );
     }
 
+    // EQWOW begin - performance helpers (see comment at the cache members)
+    private function bufferWrite(string $table, array $set) : void
+    {
+        $cols = array_keys($set);
+        if ($this->writeTable !== $table || $this->writeCols !== $cols)
+            $this->flushWrites();
+
+        $this->writeTable    = $table;
+        $this->writeCols     = $cols;
+        $this->writeBuffer[] = array_values($set);
+
+        if (count($this->writeBuffer) >= 1000)
+            $this->flushWrites();
+    }
+
+    private function flushWrites() : void
+    {
+        if (!$this->writeBuffer)
+            return;
+
+        DB::Aowow()->query('REPLACE INTO '.$this->writeTable.' (?#) VALUES (?a)', $this->writeCols, $this->writeBuffer);
+        $this->writeBuffer = [];
+    }
+
+    // Game::worldPosToZonePos() with the per-point math moved out of SQL. The candidate map
+    // rectangles are cached per (map, area, floor); position, bounds check (HAVING) and
+    // ordering are computed in php. Result rows are identical to the stock function.
+    private function zonePoints(int $mapId, float $posX, float $posY, int $areaId = 0, int $floor = -1) : array
+    {
+        // stock Game::worldPosToZonePos passes the coordinates through ?d placeholders which
+        // intval() them - truncate the same way so results stay identical
+        $posX = (int)$posX;
+        $posY = (int)$posY;
+
+        $points = $this->zonePointsFromRects($this->zoneRects($mapId, $areaId, $floor), $posX, $posY);
+        if (!$points)                                       // retry: pre-instance subareas belong to the instance-maps but are displayed on the outside. There are also cases where the zone reaches outside its own map.
+            $points = $this->zonePointsFromRects($this->zoneRects($mapId, 0, -1), $posX, $posY);
+
+        return $points;
+    }
+
+    private function zoneRects(int $mapId, int $areaId, int $floor) : array
+    {
+        $key = $mapId.':'.$areaId.':'.$floor;
+        if (isset($this->zoneRectCache[$key]))
+            return $this->zoneRectCache[$key];
+
+        // identical to the query in Game::worldPosToZonePos minus the position math + HAVING + ORDER
+        $rects = DB::Aowow()->select(
+           'SELECT
+                x.`id`,
+                x.`areaId`,
+                IF(x.`defaultDungeonMapId` < 0, x.`floor` + 1, x.`floor`) AS `floor`,
+                IF(dm.`id` IS NOT NULL OR x.`defaultDungeonMapId` < 0, 1, 0) AS `multifloor`,
+                x.`minY`, x.`maxY`, x.`minX`, x.`maxX`
+            FROM
+                (SELECT 0 AS `id`, `areaId`,     `mapId`, `right` AS `minY`, `left` AS `maxY`, `top` AS `maxX`, `bottom` AS `minX`, 0 AS `floor`, 0 AS `worldMapAreaId`, `defaultDungeonMapId` FROM ?_worldmaparea wma UNION
+                 SELECT   dm.`id`, `areaId`, wma.`mapId`,            `minY`,           `maxY`,          `maxX`,             `minX`,      `floor`,      `worldMapAreaId`, `defaultDungeonMapId` FROM ?_worldmaparea wma
+                 JOIN   ?_dungeonmap dm ON dm.`mapId` = wma.`mapId` WHERE wma.`mapId` NOT IN (0, 1, 530, 571) OR wma.`areaId` = 4395) x
+            LEFT JOIN
+                ?_dungeonmap dm ON dm.`mapId` = x.`mapId` AND dm.`worldMapAreaId` = x.`worldMapAreaId` AND dm.`floor` <> x.`floor` AND dm.`worldMapAreaId` > 0
+            WHERE
+                x.`mapId` = ?d AND IF(?d, x.`areaId` = ?d, x.`areaId` <> 0){ AND x.`floor` = ?d - IF(x.`defaultDungeonMapId` < 0, 1, 0)}
+            GROUP BY
+                x.`id`, x.`areaId`',
+            $mapId, $areaId, $areaId, $floor < 0 ? DBSIMPLE_SKIP : $floor
+        );
+
+        return $this->zoneRectCache[$key] = $rects ?: [];
+    }
+
+    private function zonePointsFromRects(array $rects, float $posX, float $posY) : array
+    {
+        $points = [];
+        foreach ($rects as $r)
+        {
+            $spanY = $r['maxY'] - $r['minY'];
+            $spanX = $r['maxX'] - $r['minX'];
+            if (!$spanY || !$spanX)                         // matches SQL: division by zero -> NULL -> fails HAVING
+                continue;
+
+            $rawX = ($r['maxY'] - $posY) * 100 / $spanY;
+            $rawY = ($r['maxX'] - $posX) * 100 / $spanX;
+            $pX   = round($rawX, 1);
+            $pY   = round($rawY, 1);
+            if ($pX < 0.1 || $pX > 99.9 || $pY < 0.1 || $pY > 99.9)
+                continue;
+
+            $points[] = array(
+                'id'         => $r['id'],
+                'areaId'     => $r['areaId'],
+                'floor'      => $r['floor'],
+                'multifloor' => $r['multifloor'],
+                'posX'       => $pX,
+                'posY'       => $pY,
+                'dist'       => sqrt(pow(abs($rawX - 50), 2) + pow(abs($rawY - 50), 2))
+            );
+        }
+
+        usort($points, function ($a, $b) { return ($b['multifloor'] <=> $a['multifloor']) ?: ($a['dist'] <=> $b['dist']); });
+
+        return $points;
+    }
+    // EQWOW end
+
     private function transformPoint(array $point, int $type, ?string &$notice = '') : array
     {
         // npc/object is on a transport -> apply offsets to path of transport
@@ -310,7 +429,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
             $notice = '[points] '.str_pad('['.$point['guid'].']', 9).' manually moved to [A:'.($point['areaId'] ?? 0).' => '.$area.'; F: '.$floor.']';
         }
 
-        if ($points = Game::worldPosToZonePos($point['map'], $point['posX'], $point['posY'], $area, $floor))
+        if ($points = $this->zonePoints($point['map'], $point['posX'], $point['posY'], $area, $floor))   // EQWOW - was Game::worldPosToZonePos, now cached per (map, area, floor)
         {
             // if areaId is set and we match it .. we're fine .. mostly
             if (count($points) == 1 && $area == $points[0]['areaId'])
@@ -321,13 +440,22 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         }
 
         // cannot be placed on a map, try to reuse TC assigned areaId (note: area has been invalid in the past)
-        if ($area && ($selfOrParent = DB::Aowow()->selectCell('SELECT IF(`parentArea`, `parentArea`, `id`) FROM ?_zones WHERE `id` = ?d', $area)))
-            return ['areaId' => $selfOrParent, 'posX' => 0, 'posY' => 0, 'floor' => 0];
+        if ($area)
+        {
+            if (!isset($this->zoneParentCache[$area]))      // EQWOW - memoized
+                $this->zoneParentCache[$area] = DB::Aowow()->selectCell('SELECT IF(`parentArea`, `parentArea`, `id`) FROM ?_zones WHERE `id` = ?d', $area) ?: 0;
+            if ($selfOrParent = $this->zoneParentCache[$area])
+                return ['areaId' => $selfOrParent, 'posX' => 0, 'posY' => 0, 'floor' => 0];
+        }
 
         // we know the instanced map; try to assign a zone this way
         if (!in_array($point['map'], [0, 1, 530, 571]))
-            if ($area = DB::Aowow()->selectCell('SELECT `id` FROM ?_zones WHERE `mapId` = ?d AND `parentArea` = 0 AND (`cuFlags` & ?d) = 0', $point['map'], CUSTOM_EXCLUDE_FOR_LISTVIEW))
+        {
+            if (!isset($this->mapZoneCache[$point['map']])) // EQWOW - memoized
+                $this->mapZoneCache[$point['map']] = DB::Aowow()->selectCell('SELECT `id` FROM ?_zones WHERE `mapId` = ?d AND `parentArea` = 0 AND (`cuFlags` & ?d) = 0', $point['map'], CUSTOM_EXCLUDE_FOR_LISTVIEW) ?: 0;
+            if ($area = $this->mapZoneCache[$point['map']])
                 return ['areaId' => $area, 'posX' => 0, 'posY' => 0, 'floor' => 0];
+        }
 
         return [];
     }

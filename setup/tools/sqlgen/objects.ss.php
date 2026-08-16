@@ -70,8 +70,8 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         {
             CLI::write(' * batch #' . ++$i . ' (' . count($objects) . ')', CLI::LOG_BLANK, true, true);
 
-            foreach ($objects as $object)
-                DB::Aowow()->query('INSERT INTO ?_objects VALUES (?a)', array_values($object));
+            // EQWOW - one multi-row insert per batch instead of per-row queries
+            DB::Aowow()->query('INSERT IGNORE INTO ?_objects VALUES (?a)', array_map('array_values', array_values($objects)));
         }
 
         // apply typeCat and reqSkill depending on locks

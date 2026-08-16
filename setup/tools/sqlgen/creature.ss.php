@@ -101,17 +101,21 @@ CLISetup::registerSetup("sql", new class extends SetupScript
             LEFT JOIN creature_template_model ctm2 ON ct.entry = ctm2.CreatureID AND ctm2.Idx = 1
             LEFT JOIN creature_template_model ctm3 ON ct.entry = ctm3.CreatureID AND ctm3.Idx = 2
             LEFT JOIN creature_template_model ctm4 ON ct.entry = ctm4.CreatureID AND ctm4.Idx = 3
-           { WHERE     ct.entry IN (?a) }
-            LIMIT     ?d, ?d';
+            WHERE     ct.entry > ?d                         -- EQWOW - keyset pagination instead of quadratic LIMIT offset
+           { AND       ct.entry IN (?a) }
+            ORDER BY  ct.entry
+            LIMIT     ?d';
 
         $i = 0;
+        $lastId = 0;                                        // EQWOW - keyset pagination
         DB::Aowow()->query('TRUNCATE ?_creature');
-        while ($npcs = DB::World()->select($baseQuery, NPC_CU_INSTANCE_BOSS, $ids ?: DBSIMPLE_SKIP, CLISetup::SQL_BATCH * $i, CLISetup::SQL_BATCH))
+        while ($npcs = DB::World()->select($baseQuery, NPC_CU_INSTANCE_BOSS, $lastId, $ids ?: DBSIMPLE_SKIP, CLISetup::SQL_BATCH))
         {
             CLI::write(' * batch #' . ++$i . ' (' . count($npcs) . ')', CLI::LOG_BLANK, true, true);
+            $lastId = (int)end($npcs)['entry'];             // EQWOW - keyset pagination
 
-            foreach ($npcs as $npc)
-                DB::Aowow()->query('INSERT INTO ?_creature VALUES (?a)', array_values($npc));
+            // EQWOW - one multi-row insert per batch instead of per-row queries
+            DB::Aowow()->query('INSERT IGNORE INTO ?_creature VALUES (?a)', array_map('array_values', array_values($npcs)));
         }
 
         // apply "textureString", "modelId" and "iconSring"

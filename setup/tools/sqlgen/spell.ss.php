@@ -113,7 +113,9 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                            0 AS spellDescriptionVariable,
                            0 AS trainingCost
                     FROM   spell_dbc
-                    LIMIT  ?d,?d';
+                    WHERE  id > ?d                          -- EQWOW - keyset pagination instead of quadratic LIMIT offset
+                    ORDER  BY id
+                    LIMIT  ?d';
 
         $baseQry = 'SELECT    s.id,
                               category,
@@ -203,7 +205,9 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                     LEFT JOIN dbc_spellradius    sr1 ON s.effect1RadiusId = sr1.id
                     LEFT JOIN dbc_spellradius    sr2 ON s.effect2RadiusId = sr2.id
                     LEFT JOIN dbc_spellradius    sr3 ON s.effect3RadiusId = sr3.id
-                    LIMIT     ?d,?d';
+                    WHERE     s.id > ?d                     -- EQWOW - keyset pagination instead of quadratic LIMIT offset
+                    ORDER BY  s.id
+                    LIMIT     ?d';
 
 
         DB::Aowow()->query('TRUNCATE ?_spell');
@@ -212,7 +216,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         $lastMax = 0;
         $n = 0;
         CLI::write('[spell] - copying serverside spells into aowow_spell');
-        while ($spells = DB::World()->select($ssQuery, CUSTOM_SERVERSIDE, $n++ * CLISetup::SQL_BATCH, CLISetup::SQL_BATCH))
+        while ($spells = DB::World()->select($ssQuery, CUSTOM_SERVERSIDE, $lastMax, CLISetup::SQL_BATCH))   // EQWOW - keyset pagination
         {
             $newMax = max(array_column($spells, 'id'));
 
@@ -220,8 +224,8 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
             $lastMax = $newMax;
 
-            foreach ($spells as $spell)
-                DB::Aowow()->query('INSERT INTO ?_spell VALUES (?a)', array_values($spell));
+            // EQWOW - one multi-row insert per batch instead of per-row queries
+            DB::Aowow()->query('INSERT IGNORE INTO ?_spell VALUES (?a)', array_map('array_values', array_values($spells)));
         }
 
         // apply spell radii, duration & casting time
@@ -235,7 +239,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         $lastMax = 0;
         $n = 0;
         CLI::write('[spell] - merging spell.dbc into aowow_spell');
-        while ($spells = DB::Aowow()->select($baseQry, $n++ * CLISetup::SQL_BATCH, CLISetup::SQL_BATCH))
+        while ($spells = DB::Aowow()->select($baseQry, $lastMax, CLISetup::SQL_BATCH))  // EQWOW - keyset pagination
         {
             $newMax = max(array_column($spells, 'id'));
 
@@ -243,8 +247,8 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
             $lastMax = $newMax;
 
-            foreach ($spells as $spell)
-                DB::Aowow()->query('INSERT INTO ?_spell VALUES (?a)', array_values($spell));
+            // EQWOW - one multi-row insert per batch instead of per-row queries
+            DB::Aowow()->query('INSERT IGNORE INTO ?_spell VALUES (?a)', array_map('array_values', array_values($spells)));
         }
 
         // apply flag: CUSTOM_DISABLED [0xD: players (0x1), pets (0x4), general (0x8); only generally disabled spells]
@@ -279,6 +283,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         CLI::write('[spell] - linking with skilllineability');
 
         $results  = DB::Aowow()->select('SELECT `spellId` AS ARRAY_KEY, `id` AS ARRAY_KEY2, `skillLineId`, `reqRaceMask`, `reqClassMask`, `reqSkillLevel`, `acquireMethod`, `skillLevelGrey`, `skillLevelYellow` FROM dbc_skilllineability sla');
+        $slaRows  = [];                                     // EQWOW - collected for one batched temp-table update instead of ~2 queries per spell
         foreach ($results as $spellId => $sets)
         {
             $names   = array_keys(current($sets));
@@ -326,9 +331,6 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                 }
             }
 
-            if ($trainer)
-                DB::Aowow()->query('UPDATE ?_spell SET `learnedAt` = 1 WHERE `id` = ?d', $spellId);
-
             // check skillLineId against mask
             switch (count($lines))
             {
@@ -351,8 +353,30 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                     }
             }
 
-            DB::Aowow()->query('UPDATE ?_spell SET ?a WHERE `id` = ?d', $update, $spellId);
+            // EQWOW - collect instead of UPDATE ?_spell SET ?a WHERE id (plus the learnedAt update above); applied batched below
+            $slaRows[] = array_merge([$spellId], array_values($update), [$trainer ? 1 : 0]);
         }
+
+        // EQWOW begin - apply the collected skilllineability data in one join instead of ~2 queries per spell
+        if ($slaRows)
+        {
+            DB::Aowow()->query('CREATE TEMPORARY TABLE tmp_sla_merge (`id` INT PRIMARY KEY, `skillLine1` BIGINT, `skillLine2OrMask` BIGINT, `reqRaceMask` BIGINT, `reqClassMask` BIGINT, `reqSkillLevel` BIGINT, `skillLevelGrey` BIGINT, `skillLevelYellow` BIGINT, `learnedAt` TINYINT)');
+            foreach (array_chunk($slaRows, 1000) as $chunk)
+                DB::Aowow()->query('INSERT INTO tmp_sla_merge VALUES (?a)', $chunk);
+            DB::Aowow()->query(
+               'UPDATE ?_spell s JOIN tmp_sla_merge t ON t.`id` = s.`id` SET
+                    s.`skillLine1`       = t.`skillLine1`,
+                    s.`skillLine2OrMask` = t.`skillLine2OrMask`,
+                    s.`reqRaceMask`      = t.`reqRaceMask`,
+                    s.`reqClassMask`     = t.`reqClassMask`,
+                    s.`reqSkillLevel`    = t.`reqSkillLevel`,
+                    s.`skillLevelGrey`   = t.`skillLevelGrey`,
+                    s.`skillLevelYellow` = t.`skillLevelYellow`,
+                    s.`learnedAt`        = IF(t.`learnedAt`, 1, s.`learnedAt`)'
+            );
+            DB::Aowow()->query('DROP TEMPORARY TABLE tmp_sla_merge');
+        }
+        // EQWOW end
 
         // fill learnedAt, trainingCost from trainer
         if ($trainer = DB::World()->select('SELECT `spellID` AS ARRAY_KEY, MIN(`ReqSkillRank`) AS `reqSkill`, MIN(`MoneyCost`) AS `cost`, `ReqAbility1` AS `reqSpellId`, COUNT(*) AS `count` FROM trainer_spell GROUP BY `SpellID`'))
@@ -403,8 +427,20 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                 }
             }
 
-            foreach ($links as $spell => $link)
-                DB::Aowow()->query("UPDATE ?_spell s SET s.`learnedAt` = ?d, s.`trainingCost` = ?d WHERE s.`id` = ?d", $link[0], $link[1], $spell);
+            // EQWOW begin - batched via temp table instead of one UPDATE per spell
+            if ($links)
+            {
+                $rows = [];
+                foreach ($links as $spell => $link)
+                    $rows[] = [$spell, $link[0], $link[1]];
+
+                DB::Aowow()->query('CREATE TEMPORARY TABLE tmp_trainer_links (`id` INT PRIMARY KEY, `learnedAt` BIGINT, `trainingCost` BIGINT)');
+                foreach (array_chunk($rows, 1000) as $chunk)
+                    DB::Aowow()->query('INSERT INTO tmp_trainer_links VALUES (?a)', $chunk);
+                DB::Aowow()->query('UPDATE ?_spell s JOIN tmp_trainer_links t ON t.`id` = s.`id` SET s.`learnedAt` = t.`learnedAt`, s.`trainingCost` = t.`trainingCost`');
+                DB::Aowow()->query('DROP TEMPORARY TABLE tmp_trainer_links');
+            }
+            // EQWOW end
         }
 
         // fill learnedAt from recipe-items
@@ -504,9 +540,20 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         SpellList::EFFECTS_ITEM_CREATE, SpellList::AURAS_ITEM_CREATE);
 
         $itemInfo = DB::World()->select('SELECT entry AS ARRAY_KEY, displayId AS d, Quality AS q FROM item_template WHERE entry IN (?a)', $itemSpells);
+        // EQWOW begin - batched via temp table instead of one 3-table-join UPDATE per craft spell
+        $rows = [];
         foreach ($itemSpells as $sId => $itemId)
             if (isset($itemInfo[$itemId]))
-                DB::Aowow()->query('UPDATE ?_spell s, ?_icons ic, dbc_itemdisplayinfo idi SET s.iconIdAlt = ic.id, s.cuFlags = s.cuFlags | ?d WHERE ic.name = LOWER(idi.inventoryIcon1) AND idi.id = ?d AND s.id = ?d', ((7 - $itemInfo[$itemId]['q']) << 8), $itemInfo[$itemId]['d'], $sId);
+                $rows[] = [$sId, $itemInfo[$itemId]['d'], ((7 - $itemInfo[$itemId]['q']) << 8)];
+        if ($rows)
+        {
+            DB::Aowow()->query('CREATE TEMPORARY TABLE tmp_craft_icons (`id` INT PRIMARY KEY, `displayId` INT, `flagOr` INT)');
+            foreach (array_chunk($rows, 1000) as $chunk)
+                DB::Aowow()->query('INSERT INTO tmp_craft_icons VALUES (?a)', $chunk);
+            DB::Aowow()->query('UPDATE ?_spell s JOIN tmp_craft_icons t ON t.`id` = s.`id` JOIN dbc_itemdisplayinfo idi ON idi.`id` = t.`displayId` JOIN ?_icons ic ON ic.`name` = LOWER(idi.`inventoryIcon1`) SET s.`iconIdAlt` = ic.`id`, s.`cuFlags` = s.`cuFlags` | t.`flagOr`');
+            DB::Aowow()->query('DROP TEMPORARY TABLE tmp_craft_icons');
+        }
+        // EQWOW end
 
         // AC
         // apply specializations [trainerTemplate => reqSpell]

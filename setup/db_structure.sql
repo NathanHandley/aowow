@@ -2312,7 +2312,8 @@ CREATE TABLE `aowow_quests_startend` (
   `questId` mediumint unsigned NOT NULL,
   `method` tinyint unsigned NOT NULL COMMENT '&0x1: starts; &0x2:ends',
   `eventId` smallint unsigned NOT NULL DEFAULT 0,
-  PRIMARY KEY (`type`,`typeId`,`questId`)
+  PRIMARY KEY (`type`,`typeId`,`questId`),
+  KEY `quest_idx` (`questId`)                               -- EQWOW - the quests_startend sqlgen final UPDATE joins on questId
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
