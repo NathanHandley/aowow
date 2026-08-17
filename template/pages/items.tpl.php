@@ -100,8 +100,11 @@ endforeach;
                                 &nbsp;<select name="ub">
                                     <option></option>
 <?php
+$eqPrimary = Game::eqPrimaryClasses();              // EQWOW: every WoW class is also its primary EQ class
 foreach (Lang::game('cl') as $k => $str):
     if ($str):
+        if (isset($eqPrimary[$k]) && ($eqName = Lang::game('eqcl', $eqPrimary[$k])))
+            $str = 'WoW '.$str.' (+EQ '.$eqName.')'; // EQWOW
         echo '                            <option value="'.$k.'"'.(isset($f['ub']) && $k == $f['ub'] ? ' selected' : null).'>'.$str."</option>\n";
     endif;
 endforeach;
@@ -112,7 +115,12 @@ endforeach;
                             <!-- EQWOW: filter by EQ class (AllowedEQClassMask from the EQWOW mod) -->
                             <td class="padded"><?=Lang::item('usableByEQ').Lang::main('colon'); ?></td>
                             <td class="padded" colspan="2">
-                                &nbsp;<select name="ubeq">
+                                <!-- EQWOW: connector to "Usable by" - OR: either character; AND: one character that is both -->
+                                &nbsp;<select name="ubop" style="margin-right: 0.5em">
+                                    <option value=""<?=(!isset($f['ubop']) ? ' selected' : null); ?>>OR</option>
+                                    <option value="1"<?=(isset($f['ubop']) ? ' selected' : null); ?>>AND</option>
+                                </select>
+                                <select name="ubeq">
                                     <option></option>
 <?php
 foreach (Lang::game('eqcl') as $k => $str):

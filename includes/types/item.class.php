@@ -2009,6 +2009,7 @@ class ItemListFilter extends Filter
         'ma'    => [parent::V_EQUAL,    1,                                               false], // match any / all filter
         'ub'    => [parent::V_LIST,     [[1, 9], 11],                                    false], // usable by classId
         'ubeq'  => [parent::V_RANGE,    [1, 14],                                         false], // EQWOW: usable by EQ classId (1-14)
+        'ubop'  => [parent::V_EQUAL,    1,                                               false], // EQWOW: ub/ubeq connector (unset: OR, 1: AND - one character with both classes)
         'eqi'   => [parent::V_LIST,     [1, 2],                                          false], // EQWOW: item origin (1: EverQuest only, 2: WoW only, unset: both)
         'qu'    => [parent::V_RANGE,    [0, 7],                                          true ], // quality ids
         'ty'    => [parent::V_CALLBACK, 'cbTypeCheck',                                   true ], // item type - dynamic by current group
@@ -2129,9 +2130,19 @@ class ItemListFilter extends Filter
                 $parts[] = $_;
 
         // usable-by (not excluded by requiredClass && armor or weapons match mask from ?_classes)
+        // EQWOW: reworked - every WoW class is also its primary EQ class (mod_everquest_classmap.eqclass_base),
+        // and EQ items ignore WoW class/proficiency rules in-game (usability goes by eqClassMask alone).
+        // ub:   WoW items by the stock WoW-class checks + EQ items by the primary EQ class
+        // ubeq: EQ items by the selected EQ class
+        // both: ubop unset (OR)  - usable by either character
+        //       ubop set   (AND) - one character that is both: WoW items by the WoW class,
+        //                          EQ items by the selected (active) EQ class instead of the primary
+        $ubWow = $ubWowEq = $ubEq = null;
+        $eqRange = Game::eqItemIdRange();
+
         if (isset($_v['ub']))
         {
-            $parts[] = array(
+            $ubWow = array(
                 'AND',
                 ['OR', ['requiredClass', 0], ['requiredClass', $this->list2Mask((array)$_v['ub']), '&']],
                 [
@@ -2141,14 +2152,34 @@ class ItemListFilter extends Filter
                     ['AND', ['class', ITEM_CLASS_ARMOR],  ['subclassbak', $this->ubFilter[$_v['ub']][ITEM_CLASS_ARMOR]]]
                 ]
             );
+
+            if ($eqRange)
+            {
+                // stock checks only apply to WoW items ..
+                $ubWow = ['AND', ['OR', ['i.id', $eqRange[0], '<'], ['i.id', $eqRange[1], '>']], $ubWow];
+
+                // .. EQ items go by the WoW class' primary EQ class
+                if ($primary = Game::eqPrimaryClasses()[$_v['ub']] ?? 0)
+                {
+                    $ids = DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($primary - 1));
+                    $ubWowEq = ['i.id', $ids ?: [0]];
+                }
+            }
         }
 
         // EQWOW: usable by EQ class - masks copied from mod_everquest_item_template by sqlgen/everquest.ss.php
         if (isset($_v['ubeq']))
         {
             $eqItemIds = DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($_v['ubeq'] - 1));
-            $parts[] = ['i.id', $eqItemIds ?: [0]];
+            $ubEq = ['i.id', $eqItemIds ?: [0]];
         }
+
+        if ($ubWow && $ubEq)
+            $parts[] = (isset($_v['ubop']) || !$ubWowEq) ? ['OR', $ubWow, $ubEq] : ['OR', $ubWow, $ubWowEq, $ubEq];
+        else if ($ubWow)
+            $parts[] = $ubWowEq ? ['OR', $ubWow, $ubWowEq] : $ubWow;
+        else if ($ubEq)
+            $parts[] = $ubEq;
 
         // EQWOW: item origin - EverQuest items occupy the ItemTemplateIDMin/Max id range from mod_everquest_systemconfigs
         if (isset($_v['eqi']))

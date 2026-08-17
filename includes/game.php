@@ -213,6 +213,22 @@ class Game
         return $range;
     }
 
+    // primary (baked-in) EQ class per WoW class from mod_everquest_classmap - every WoW class
+    // always is its eqclass_base, so "usable by <WoW class>" includes that EQ class' items
+    // [wowClassId => eqClassId (1-14)], empty when the mod tables are absent
+    public static function eqPrimaryClasses() : array
+    {
+        static $map = null;
+        if ($map === null)
+        {
+            $map = [];
+            if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_classmap"'))
+                $map = DB::World()->selectCol('SELECT `wowclass` AS ARRAY_KEY, `eqclass_base` FROM mod_everquest_classmap');
+        }
+
+        return $map;
+    }
+
     // all EverQuest area names (subzones included) plus the Norrath continent map ids (895+,
     // they double as category ids in listview notes) - merged into g_zones / g_quest_sorts
     // by template/bricks/head.tpl.php so location and quest category columns resolve everywhere
