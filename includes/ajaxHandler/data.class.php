@@ -105,20 +105,12 @@ class AjaxData extends AjaxHandler
                     if (!Util::loadStaticFile($set, $result, true) && Cfg::get('DEBUG'))
                         $result .= "alert('could not fetch static data: ".$set." for locale: ".Lang::getLocale()->json()."');";
 
-                    // EQWOW begin - g_zones in the static locale js only knows stock WoW zones, so
-                    // location columns and texts printed "undefined" for EverQuest areas (AreaTable
-                    // 5100+). Merge their names in from ?_zones (viewer is enUS-only -> name_loc0).
+                    // EQWOW begin - g_zones in the static locale js only knows stock WoW zones;
+                    // merge the EverQuest area names in (template/bricks/head.tpl.php does the same
+                    // on every full page render - this covers direct dataset consumers)
                     if ($set == 'zones')
-                    {
-                        $eqZones = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_zones WHERE `id` >= 5100');
-
-                        // the Norrath continent map ids (895+) double as quest/zone category ids in listview notes
-                        if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_viewer_zone"'))
-                            $eqZones += DB::World()->selectCol('SELECT `MapID` AS ARRAY_KEY, `DescriptiveName` FROM mod_everquest_viewer_zone WHERE `IsContinent` <> 0');
-
-                        if ($eqZones)
+                        if ($eqZones = Game::eqZoneNames())
                             $result .= "\n(function (z) { for (var k in z) g_zones[k] = z[k]; })(".Util::toJSON($eqZones).");\n";
-                    }
                     // EQWOW end
 
                     $result .= "\n\n";

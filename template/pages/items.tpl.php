@@ -122,6 +122,20 @@ foreach (Lang::game('eqcl') as $k => $str):
 endforeach;
 ?>
                                 </select></td>
+                        </tr><tr>
+                            <!-- EQWOW: filter by item origin (EverQuest item id range from mod_everquest_systemconfigs) -->
+                            <td class="padded"><?=Lang::item('itemOrigin').Lang::main('colon'); ?></td>
+                            <td class="padded" colspan="2">
+                                &nbsp;<select name="eqi">
+                                    <option></option>
+<?php
+foreach (Lang::item('eqOrigin') as $k => $str):
+    if ($str):
+        echo '                            <option value="'.$k.'"'.(isset($f['eqi']) && $k == $f['eqi'] ? ' selected' : null).'>'.$str."</option>\n";
+    endif;
+endforeach;
+?>
+                                </select></td>
                         </tr>
                     </table>
 

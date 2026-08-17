@@ -2009,6 +2009,7 @@ class ItemListFilter extends Filter
         'ma'    => [parent::V_EQUAL,    1,                                               false], // match any / all filter
         'ub'    => [parent::V_LIST,     [[1, 9], 11],                                    false], // usable by classId
         'ubeq'  => [parent::V_RANGE,    [1, 14],                                         false], // EQWOW: usable by EQ classId (1-14)
+        'eqi'   => [parent::V_LIST,     [1, 2],                                          false], // EQWOW: item origin (1: EverQuest only, 2: WoW only, unset: both)
         'qu'    => [parent::V_RANGE,    [0, 7],                                          true ], // quality ids
         'ty'    => [parent::V_CALLBACK, 'cbTypeCheck',                                   true ], // item type - dynamic by current group
         'sl'    => [parent::V_CALLBACK, 'cbSlotCheck',                                   true ], // item slot - dynamic by current group
@@ -2148,6 +2149,16 @@ class ItemListFilter extends Filter
             $eqItemIds = DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($_v['ubeq'] - 1));
             $parts[] = ['i.id', $eqItemIds ?: [0]];
         }
+
+        // EQWOW: item origin - EverQuest items occupy the ItemTemplateIDMin/Max id range from mod_everquest_systemconfigs
+        if (isset($_v['eqi']))
+            if ($range = Game::eqItemIdRange())
+            {
+                if ($_v['eqi'] == 1)                        // EverQuest items only
+                    $parts[] = ['AND', ['i.id', $range[0], '>='], ['i.id', $range[1], '<=']];
+                else                                        // World of Warcraft items only
+                    $parts[] = ['OR', ['i.id', $range[0], '<'], ['i.id', $range[1], '>']];
+            }
 
         // quality [list]
         if (isset($_v['qu']))

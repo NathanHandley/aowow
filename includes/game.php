@@ -193,6 +193,42 @@ class Game
 
         return $factions;
     }
+
+    // item id range occupied by EverQuest items, published by the converter via
+    // mod_everquest_systemconfigs - [min, max], or null when the mod tables are absent
+    public static function eqItemIdRange() : ?array
+    {
+        static $range = false;
+        if ($range === false)
+        {
+            $range = null;
+            if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_systemconfigs"'))
+            {
+                $_ = DB::World()->selectCol('SELECT `Key` AS ARRAY_KEY, `Value` FROM mod_everquest_systemconfigs WHERE `Key` IN ("ItemTemplateIDMin", "ItemTemplateIDMax")');
+                if (isset($_['ItemTemplateIDMin'], $_['ItemTemplateIDMax']))
+                    $range = [(int)$_['ItemTemplateIDMin'], (int)$_['ItemTemplateIDMax']];
+            }
+        }
+
+        return $range;
+    }
+
+    // all EverQuest area names (subzones included) plus the Norrath continent map ids (895+,
+    // they double as category ids in listview notes) - merged into g_zones / g_quest_sorts
+    // by template/bricks/head.tpl.php so location and quest category columns resolve everywhere
+    public static function eqZoneNames() : array
+    {
+        static $names = null;
+        if ($names === null)
+        {
+            $names = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_zones WHERE `id` >= 5100');
+
+            if (DB::World()->selectCell('SHOW TABLES LIKE "mod_everquest_viewer_zone"'))
+                $names += DB::World()->selectCol('SELECT `MapID` AS ARRAY_KEY, `DescriptiveName` FROM mod_everquest_viewer_zone WHERE `IsContinent` <> 0');
+        }
+
+        return $names;
+    }
     // EQWOW end
 
     public static function getReputationLevelForPoints($pts)

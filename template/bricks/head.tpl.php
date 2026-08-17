@@ -37,6 +37,14 @@ endforeach;
 if ($this->gFavorites):
     echo "        g_favorites = ".Util::toJSON($this->gFavorites).";\n";
 endif;
+
+// EQWOW begin - g_zones / g_quest_sorts in the static locale js only know stock WoW entries, so
+// location and quest category columns printed "undefined" for EverQuest areas. Merge the EQ area
+// names in on every page (both maps key by areaId for EQ; ids are disjoint from stock entries).
+if ($eqZoneNames = Game::eqZoneNames()):
+    echo "        (function (z) { for (var k in z) { g_zones[k] = z[k]; g_quest_sorts[k] = z[k]; } })(".Util::toJSON($eqZoneNames).");\n";
+endif;
+// EQWOW end
 ?>
     </script>
 
