@@ -70,7 +70,10 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                        WHERE    type NOT IN (4, 6) AND groupId <> 11
                        GROUP BY mapId) lfgIni ON lfgIni.mapId = m.id
             LEFT JOIN dbc_battlemasterlist bm ON bm.mapId = a.mapId AND bm.moreMapId < 0
-            LEFT JOIN dbc_worldmaparea wma ON wma.areaId = a.id
+            -- EQWOW: the converter emits a second WorldMapArea row per area for dungeon/raid map
+            -- variants (maps 901+) - pick one row per area (the base zone map = lowest mapId),
+            -- otherwise the join fans out and the multi-row insert below dies on duplicate ids
+            LEFT JOIN dbc_worldmaparea wma ON wma.id = (SELECT `id` FROM dbc_worldmaparea WHERE `areaId` = a.id ORDER BY `mapId` ASC LIMIT 1)
             LEFT JOIN dbc_worldmaptransforms wmt ON wmt.targetMapId <> wmt.sourceMapId AND wma.mapId  = wmt.sourceMapId AND
                       wma.left   < wmt.maxY AND wma.right  > wmt.minY AND
                       wma.top    < wmt.maxX AND wma.bottom > wmt.minX',
@@ -78,6 +81,14 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         );
 
         DB::Aowow()->query('INSERT INTO ?_zones VALUES (?a)', $baseData);
+
+        // EQWOW - a duplicate id in $baseData fails the whole multi-row insert above with only a
+        // warning; treat an empty table as a hard error instead of "succeeding" without zones
+        if (!DB::Aowow()->selectCell('SELECT COUNT(*) FROM ?_zones'))
+        {
+            CLI::write('[zones] ?_zones is empty after the base insert - duplicate ids from join fanout?', CLI::LOG_ERROR);
+            return false;
+        }
 
 
         // EQWOW: group EverQuest zones under their continent maps using mod_everquest_viewer_zone (generated
