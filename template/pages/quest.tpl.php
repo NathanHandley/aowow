@@ -199,6 +199,35 @@ if ($g = $this->gains):
     echo "                    </ul>\n";
 endif;
 
+// EQWOW begin - questgiver reactions on turn-in (mod_everquest_quest_reaction)
+if ($this->reactions):
+    echo '                    <h3>'.Lang::quest('reactions')."</h3>\n";
+    echo '                    '.Lang::quest('reactionsDesc').Lang::main('colon')."\n";
+    echo "                    <ul>\n";
+
+    foreach ($this->reactions as $giver):
+        echo '                        <li><div>'.sprintf(Lang::npc('reactQuestTurnIn'), $giver['link'])."</div>\n";
+        echo "                            <ul>\n";
+        foreach ($giver['lines'] as $line):
+            $notes = $line['notes'] ? ' <small class="q0">('.implode('; ', $line['notes']).')</small>' : '';
+            echo '                                <li><div>'.$line['text'].$notes."</div>\n";
+            if (!empty($line['steps'])):
+                echo "                                    <ul>\n";
+                foreach ($line['steps'] as $step):
+                    $sNotes = $step['notes'] ? ' <small class="q0">('.implode('; ', $step['notes']).')</small>' : '';
+                    echo '                                        <li><div>'.$step['text'].$sNotes."</div></li>\n";
+                endforeach;
+                echo "                                    </ul>\n";
+            endif;
+            echo "                                </li>\n";
+        endforeach;
+        echo "                            </ul>\n                        </li>\n";
+    endforeach;
+
+    echo "                    </ul>\n";
+endif;
+// EQWOW end
+
 $this->brick('mail', ['offset' => ++$offset]);
 
 if (!empty($this->transfer)):

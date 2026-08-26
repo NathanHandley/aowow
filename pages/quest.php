@@ -14,6 +14,7 @@ class QuestPage extends GenericPage
     protected $providedItem  = [];
     protected $series        = [];
     protected $gains         = [];
+    protected $reactions     = [];                          // EQWOW - questgiver reactions on turn-in
     protected $mail          = [];
     protected $rewards       = [];
     protected $objectives    = '';
@@ -939,6 +940,7 @@ class QuestPage extends GenericPage
         /****************/
 
         $this->gains         = $this->createGains();
+        $this->reactions     = EQReactions::getQuestReactions($this->typeId);   // EQWOW - questgiver reactions on turn-in
         $this->mail          = $this->createMail($startEnd);
         $this->rewards       = $this->createRewards($_side);
         $this->objectives    = $this->subject->parseText('objectives', false);

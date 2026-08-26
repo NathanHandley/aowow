@@ -15,6 +15,10 @@ class NpcPage extends GenericPage
     protected $quotes       = [];
     protected $reputation   = [];
     protected $spawnPools   = [];                           // EQWOW - spawn pool display
+    protected $killSpawns   = [];                           // EQWOW - kill/combat/timer triggered reactions
+    protected $gossip       = [];                           // EQWOW - gossip menu of this NPC
+    protected $gossipSrc    = [];                           // EQWOW - gossip options elsewhere that spawn this NPC
+    protected $questReact   = [];                           // EQWOW - quest turn-ins that spawn this NPC / that it reacts to
     protected $subname      = '';
 
     protected $type          = Type::NPC;
@@ -494,11 +498,27 @@ class NpcPage extends GenericPage
         }
         // EQWOW end
 
+        // EQWOW begin - triggered reactions: both ends of every kill / gossip / quest spawn link
+        $killSpawns = array(
+            'triggers'    => EQReactions::getKillSpawnTriggers($this->typeId),
+            'triggeredBy' => EQReactions::getKillSpawnSources($this->typeId)
+        );
+
+        // the mod builds EQ gossip menus itself (see EverQuest_GossipScript), stock WoW NPCs use gossip_menu_option
+        $gossip = EQReactions::getGossipMenu($this->typeId);
+        if (!$gossip)
+            $gossip = EQReactions::getStockGossip((int)DB::World()->selectCell('SELECT `gossip_menu_id` FROM creature_template WHERE `entry` = ?d', $this->typeId));
+        // EQWOW end
+
         $this->map          = $map;
         $this->infobox      = '[ul][li]'.implode('[/li][li]', $infobox).'[/li][/ul]';
         $this->placeholder  = $placeholder;
         $this->accessory    = $accessory;
         $this->spawnPools   = $spawnPools;                  // EQWOW - spawn pool display
+        $this->killSpawns   = $killSpawns;                  // EQWOW - kill/combat/timer triggered reactions
+        $this->gossip       = $gossip;                      // EQWOW - gossip menu of this NPC
+        $this->gossipSrc    = EQReactions::getGossipSources($this->typeId);
+        $this->questReact   = EQReactions::getQuestSources($this->typeId);
         $this->quotes       = $this->getQuotes();
         $this->reputation   = $this->getOnKillRep($_altIds, $mapType);
         $this->smartAI      = $sai ? $sai->getMarkdown() : null;

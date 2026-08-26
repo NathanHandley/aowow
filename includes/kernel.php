@@ -77,6 +77,10 @@ spl_autoload_register(function ($class) {
         case 'Conditions':
             require_once 'includes/components/Conditions/Conditions.class.php';
             break;
+        // EQWOW - triggered reaction data shared by npc.php and quest.php
+        case 'EQReactions':
+            require_once 'includes/components/EQWOW/EQReactions.class.php';
+            break;
     }
 });
 

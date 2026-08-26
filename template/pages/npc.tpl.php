@@ -127,6 +127,141 @@ if ($this->spawnPools):
 endif;
 // EQWOW end
 
+// EQWOW begin - triggered reactions (kill / gossip / quest spawns) and the gossip menu
+$eqNotes = function (array $notes)
+{
+    return $notes ? ' <small class="q0">('.implode('; ', $notes).')</small>' : '';
+};
+
+// one action line, plus the steps a walkto defers to its arrival
+$eqLine = function (array $line, string $indent) use ($eqNotes)
+{
+    $out = $indent.'<li><div>'.$line['text'].$eqNotes($line['notes'])."</div>\n";
+    if (!empty($line['steps']))
+    {
+        $out .= $indent."    <ul>\n";
+        foreach ($line['steps'] as $step)
+            $out .= $indent.'        <li><div>'.$step['text'].$eqNotes($step['notes'])."</div></li>\n";
+        $out .= $indent."    </ul>\n";
+    }
+
+    return $out.$indent."</li>\n";
+};
+
+// a trigger group ("When killed" -> actions), used for both directions of a kill spawn
+$eqTriggerGroup = function (array $group, string $indent, ?string $prefix = null) use ($eqLine, $eqNotes)
+{
+    $head = $prefix === null ? $group['triggerText'] : sprintf($prefix, $group['triggerText']);
+    $out  = $indent.'<li><div>'.$head.Lang::main('colon')."</div>\n".$indent."    <ul>\n";
+    foreach ($group['entries'] as $entry)
+    {
+        if (!$entry['alts'])
+        {
+            $out .= $eqLine($entry, $indent.'        ');
+            continue;
+        }
+
+        $out .= $indent.'        <li><div>'.$entry['text'].Lang::main('colon')."</div>\n".$indent."            <ul>\n";
+        foreach ($entry['alts'] as $alt)
+        {
+            $out .= $indent.'                <li><div>'.round($alt['chance'], 1)."%</div>\n".$indent."                    <ul>\n";
+            foreach ($alt['lines'] as $line)
+                $out .= $indent.'                        <li><div>'.$line['text'].$eqNotes($line['notes'])."</div></li>\n";
+            $out .= $indent."                    </ul>\n".$indent."                </li>\n";
+        }
+        $out .= $indent."            </ul>\n".$indent."        </li>\n";
+    }
+
+    return $out.$indent."    </ul>\n".$indent."</li>\n";
+};
+
+$eqTriggers    = $this->killSpawns['triggers']    ?? [];
+$eqTriggeredBy = $this->killSpawns['triggeredBy'] ?? [];
+
+// quest rows split by direction: this NPC as the questgiver reacting, vs. this NPC being spawned by someone else's turn-in
+$eqGiverQuests = array_filter($this->questReact, function ($qr) { return  $qr['isGiver']; });
+$eqQuestSrc    = array_filter($this->questReact, function ($qr) { return !$qr['isGiver']; });
+
+if ($eqTriggers || $eqTriggeredBy || $this->gossipSrc || $eqQuestSrc):
+?>
+                <h3><?=Lang::npc('reactions'); ?></h3>
+<?php
+    if ($eqTriggers):
+        echo '                '.Lang::npc('reactTriggers').Lang::main('colon')."\n                <ul>\n";
+        foreach ($eqTriggers as $group)
+            echo $eqTriggerGroup($group, '                    ');
+        echo "                </ul>\n";
+    endif;
+
+    if ($eqTriggeredBy || $this->gossipSrc || $eqQuestSrc):
+        echo '                '.Lang::npc('reactTriggeredBy').Lang::main('colon')."\n                <ul>\n";
+
+        foreach ($eqTriggeredBy as $src):
+            echo '                    <li><div>'.$src['link']."</div>\n                        <ul>\n";
+            foreach ($src['groups'] as $group)
+                echo $eqTriggerGroup($group, '                            ', '%s');
+            echo "                        </ul>\n                    </li>\n";
+        endforeach;
+
+        foreach ($this->gossipSrc as $src):
+            $head = sprintf(Lang::npc('gossipVia'), $src['link'], '<span class="q1">&laquo;'.Util::htmlEscape($src['option']).'&raquo;</span>');
+            if ($src['onWalk'])
+                $head .= ' <small class="q0">('.Lang::npc('reactOnArrival').')</small>';
+
+            echo '                    <li><div>'.$head."</div>\n                        <ul>\n";
+            echo $eqLine($src['line'], '                            ');
+            echo "                        </ul>\n                    </li>\n";
+        endforeach;
+
+        foreach ($eqQuestSrc as $qr):
+            echo '                    <li><div>'.sprintf(Lang::npc('reactQuestTurnIn'), $qr['giverLk']).' &ndash; '.$qr['link']."</div>\n                        <ul>\n";
+            foreach ($qr['lines'] as $line)
+                echo $eqLine($line, '                            ');
+            echo "                        </ul>\n                    </li>\n";
+        endforeach;
+
+        echo "                </ul>\n";
+    endif;
+endif;
+
+// quests this NPC itself hands out that make it react
+if ($eqGiverQuests):
+?>
+                <h3><?=Lang::npc('reactQuests'); ?></h3>
+<?php
+    echo '                '.Lang::npc('reactQuestsGiver').Lang::main('colon')."\n                <ul>\n";
+    foreach ($eqGiverQuests as $qr):
+        echo '                    <li><div>'.$qr['link']."</div>\n                        <ul>\n";
+        foreach ($qr['lines'] as $line)
+            echo $eqLine($line, '                            ');
+        echo "                        </ul>\n                    </li>\n";
+    endforeach;
+    echo "                </ul>\n";
+endif;
+
+if (!empty($this->gossip['options'])):
+?>
+                <h3><?=Lang::npc('gossip'); ?></h3>
+<?php
+    echo '                '.Lang::npc('gossipDesc').Lang::main('colon')."\n";
+    if (!empty($this->gossip['greeting']))
+        echo '                <div class="q1">&laquo;'.Util::htmlEscape($this->gossip['greeting'])."&raquo;</div>\n";
+
+    echo "                <ul>\n";
+    foreach ($this->gossip['options'] as $opt):
+        echo '                    <li><div><span class="q4">'.Util::htmlEscape($opt['text'])."</span></div>\n";
+        if ($opt['lines']):
+            echo "                        <ul>\n";
+            foreach ($opt['lines'] as $line)
+                echo $eqLine($line, '                            ');
+            echo "                        </ul>\n";
+        endif;
+        echo "                    </li>\n";
+    endforeach;
+    echo "                </ul>\n";
+endif;
+// EQWOW end
+
 if (isset($this->smartAI)):
 ?>
     <div id="text-generic" class="left"></div>
