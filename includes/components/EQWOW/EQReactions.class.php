@@ -30,6 +30,10 @@ abstract class EQReactions
     public const REACT_YELL          = 7;
     public const REACT_KILLSPAWN     = 8;
     public const REACT_WALKTO        = 9;
+    // CastSpell (10) never reaches these tables - the converter turns it into creature_text + SmartAI instead
+    public const REACT_CASTSPELL     = 10;
+    public const REACT_WALKGRID      = 11;
+    public const REACT_SPAWNOBJECT   = 12;
 
     // EQ_KILLSPAWN_ACTION_* in EverQuest.h
     public const ACTION_SPAWN         = 0;
@@ -40,6 +44,9 @@ abstract class EQReactions
     public const ACTION_EMOTE         = 5;
     public const ACTION_YELL          = 6;
     public const ACTION_ATTACKPLAYER  = 7;
+    // 8 and 9 are only ever built in memory, when a walkgrid/spawnobject reaction is deferred to an arrival
+    public const ACTION_WALKPATH      = 8;
+    public const ACTION_SPAWNOBJECT   = 9;
 
     // EQ_KILLSPAWN_TRIGGER_* in EverQuest.h
     public const TRIGGER_DEATH    = 0;
@@ -50,10 +57,14 @@ abstract class EQReactions
     private const TBL_KILLSPAWN = 'mod_everquest_creature_kill_spawn';
     private const TBL_GOSSIP    = 'mod_everquest_gossip_reaction';
     private const TBL_QUEST     = 'mod_everquest_quest_reaction';
+    private const TBL_WAYPOINT  = 'mod_everquest_creature_waypoint';
 
-    private static $tables    = [];
-    private static $npcNames  = [];
-    private static $qstNames  = [];
+    private static $tables     = [];
+    private static $npcNames   = [];
+    private static $qstNames   = [];
+    private static $objNames   = [];
+    private static $placements = [];
+    private static $pathLens   = [];
 
 
     /**********/
@@ -66,6 +77,17 @@ abstract class EQReactions
             self::$tables[$table] = !!DB::World()->selectCell('SHOW TABLES LIKE "'.$table.'"');
 
         return self::$tables[$table];
+    }
+
+    // the walkgrid/spawnobject columns arrived later than the tables did - a world db from before that
+    // converter run still works, it just has nothing to show for those reactions
+    private static function hasColumn(string $table, string $column) : bool
+    {
+        $key = $table.'.'.$column;
+        if (!isset(self::$tables[$key]))
+            self::$tables[$key] = !!DB::World()->selectCell('SHOW COLUMNS FROM '.$table.' LIKE "'.$column.'"');
+
+        return self::$tables[$key];
     }
 
     // one query for every creature name a page needs instead of one per link
@@ -91,28 +113,83 @@ abstract class EQReactions
             self::$qstNames[$id] = isset($rows[$id]) ? Util::localizedString($rows[$id], 'name') : '';
     }
 
-    public static function npcLink($id, string $selfLabel = '') : string
+    // plain names - map pin tooltips are plain text, they cannot carry links
+    public static function npcName($id) : string
     {
         $id = intVal($id);
         if ($id <= 0)
-            return $selfLabel ?: Lang::npc('reactUnknownNpc');
+            return Lang::npc('reactUnknownNpc');
 
         self::loadNPCNames([$id]);
-        $name = self::$npcNames[$id] ?: (Util::ucFirst(Lang::game('npc')).' #'.$id);
 
-        return '<a href="?npc='.$id.'">'.Util::htmlEscape($name).'</a>';
+        return self::$npcNames[$id] ?: (Util::ucFirst(Lang::game('npc')).' #'.$id);
     }
 
-    public static function questLink($id) : string
+    public static function questName($id) : string
     {
         $id = intVal($id);
         if ($id <= 0)
             return Lang::npc('reactUnknownQuest');
 
         self::loadQuestNames([$id]);
-        $name = self::$qstNames[$id] ?: (Util::ucFirst(Lang::game('quest')).' #'.$id);
 
-        return '<a href="?quest='.$id.'">'.Util::htmlEscape($name).'</a>';
+        return self::$qstNames[$id] ?: (Util::ucFirst(Lang::game('quest')).' #'.$id);
+    }
+
+    public static function npcLink($id, string $selfLabel = '') : string
+    {
+        if (intVal($id) <= 0)
+            return $selfLabel ?: Lang::npc('reactUnknownNpc');
+
+        return '<a href="?npc='.intVal($id).'">'.Util::htmlEscape(self::npcName($id)).'</a>';
+    }
+
+    public static function questLink($id) : string
+    {
+        if (intVal($id) <= 0)
+            return Lang::npc('reactUnknownQuest');
+
+        return '<a href="?quest='.intVal($id).'">'.Util::htmlEscape(self::questName($id)).'</a>';
+    }
+
+    public static function objectName($id) : string
+    {
+        $id = intVal($id);
+        if ($id <= 0)
+            return Lang::npc('reactUnknownObject');
+
+        if (!isset(self::$objNames[$id]))
+            self::$objNames[$id] = GameObjectList::getName($id) ?: (Util::ucFirst(Lang::game('object')).' #'.$id);
+
+        return self::$objNames[$id];
+    }
+
+    public static function objectLink($id) : string
+    {
+        if (intVal($id) <= 0)
+            return Lang::npc('reactUnknownObject');
+
+        return '<a href="?object='.intVal($id).'">'.Util::htmlEscape(self::objectName($id)).'</a>';
+    }
+
+    // walkto and walkgrid both hand every row behind them to the arrival queue
+    private static function isWalkType(int $type) : bool
+    {
+        return $type == self::REACT_WALKTO || $type == self::REACT_WALKGRID;
+    }
+
+    // mod_everquest_creature_waypoint holds the reaction paths, keyed by WaypointID (MapID 0 = any map)
+    private static function pathLength(int $pathListId) : int
+    {
+        if (!$pathListId)
+            return 0;
+
+        if (!isset(self::$pathLens[$pathListId]))
+            self::$pathLens[$pathListId] = self::hasTable(self::TBL_WAYPOINT)
+                ? (int)DB::World()->selectCell('SELECT COUNT(*) FROM '.self::TBL_WAYPOINT.' WHERE `WaypointID` = ?d', $pathListId)
+                : 0;
+
+        return self::$pathLens[$pathListId];
     }
 
     private static function quoted(string $text) : string
@@ -165,6 +242,10 @@ abstract class EQReactions
                 return Lang::npc('reactYellsSomething');
             case self::ACTION_ATTACKPLAYER:
                 return sprintf(Lang::npc('reactAttacks'), $target);
+            case self::ACTION_WALKPATH:
+                return Lang::npc('reactWalksPath');
+            case self::ACTION_SPAWNOBJECT:
+                return sprintf(Lang::npc('reactSpawnsObject'), Lang::npc('reactUnknownObject'));
             default:
                 return sprintf($r['SpawnAtCorpse'] ? Lang::npc('reactSpawnsAtCorpse') : Lang::npc('reactSpawns'), $target);
         }
@@ -403,13 +484,22 @@ abstract class EQReactions
     }
 
     // describes one reaction row of a gossip option or a quest turn-in
-    private static function reactionLine(int $type, $targetId, string $sayText, int $delayMS, int $subjectId, bool $namedTarget, int $count = 1) : ?array
+    // $targetCol is CreatureTemplateID on quest rows, TargetCreatureTemplateID on gossip rows.
+    // $namedTarget false means "the page we are on IS the target", so it is named "this NPC" instead.
+    private static function reactionLine(array $r, string $targetCol, int $subjectId, bool $namedTarget, int $count = 1) : ?array
     {
+        $type     = (int)$r['ReactionType'];
+        $targetId = (int)$r[$targetCol];
+        $sayText  = (string)($r['SayText'] ?? '');
+        $delayMS  = (int)($r['DelayInMS'] ?? 0);
+
         $isSelf = $targetId && $subjectId && $targetId == $subjectId;
         $target = $namedTarget ? self::npcLink($targetId) : Lang::npc('reactThisNpc');
 
         if ($count > 1)
             $target = sprintf(Lang::npc('reactCopies'), $count, $target);
+
+        $extraNotes = [];
 
         switch ($type)
         {
@@ -440,6 +530,20 @@ abstract class EQReactions
             case self::REACT_WALKTO:
                 $text = Lang::npc('reactWalksTo');
                 break;
+            case self::REACT_WALKGRID:
+                // the EQ script sends the NPC along a fixed patrol grid; the row's Position is its last node
+                $text = Lang::npc('reactWalksPath');
+                if ($nodes = self::pathLength((int)($r['PathListID'] ?? 0)))
+                    $extraNotes[] = sprintf(Lang::npc('reactPathNodes'), $nodes);
+                if (!empty($r['MovementIsRun']))
+                    $extraNotes[] = Lang::npc('reactPathRuns');
+                break;
+            case self::REACT_SPAWNOBJECT:
+                // places a gameobject (a chest, a click-to-loot prop) rather than a creature
+                $text = sprintf(Lang::npc('reactSpawnsObject'), self::objectLink($r['GameObjectEntryID'] ?? 0));
+                if ($life = (int)($r['GameObjectLifetimeSec'] ?? 0))
+                    $extraNotes[] = sprintf(Lang::npc('reactObjectLifetime'), Util::formatTime($life * 1000, true));
+                break;
             default:
                 return null;
         }
@@ -448,10 +552,10 @@ abstract class EQReactions
         if ($_ = self::delayNote($delayMS))
             $notes[] = $_;
 
-        return ['type' => $type, 'text' => $text, 'notes' => $notes, 'steps' => []];
+        return ['type' => $type, 'text' => $text, 'notes' => array_merge($notes, $extraNotes), 'steps' => []];
     }
 
-    // a walkto row swallows every row behind it in its group - those fire when the creature arrives
+    // a walkto/walkgrid row swallows every row behind it in its group - those fire when the creature arrives
     private static function nestArrivalRows(array $lines) : array
     {
         $out    = [];
@@ -474,7 +578,7 @@ abstract class EQReactions
             }
 
             $out[] = $line;
-            if ($line['type'] == self::REACT_WALKTO)
+            if (self::isWalkType($line['type']))
                 $walker = array_key_last($out);
         }
 
@@ -507,17 +611,26 @@ abstract class EQReactions
         {
             $label = '';
             $lines = [];
+            $reqs  = [];
             foreach (self::collapseReactionRows($o['rows'], 'TargetCreatureTemplateID') as $r)
             {
                 if (!$label && $r['OptionText'] !== '')
                     $label = $r['OptionText'];
 
-                $lines[] = [self::reactionLine($r['ReactionType'], $r['TargetCreatureTemplateID'], $r['SayText'], $r['DelayInMS'], $npcId, true, $r['_count']), !!$r['FiresOnArrival']];
+                // an option can be gated - it only shows for players who meet these
+                if (!empty($r['RequiredQuestID']))
+                    $reqs[sprintf(Lang::npc('reactReqQuest'), self::questLink($r['RequiredQuestID']))] = true;
+
+                if (!empty($r['RequiredNearDistance']))
+                    $reqs[sprintf(Lang::npc('reactReqNear'), round($r['RequiredNearDistance']))] = true;
+
+                $lines[] = [self::reactionLine($r, 'TargetCreatureTemplateID', $npcId, true, $r['_count']), !!$r['FiresOnArrival']];
             }
 
             $out[] = array(
                 'optionId' => $optionId,
                 'text'     => $label,
+                'reqs'     => array_keys($reqs),
                 'lines'    => self::nestArrivalRows($lines)
             );
         }
@@ -540,7 +653,7 @@ abstract class EQReactions
         $out = [];
         foreach ($rows as $r)
         {
-            if (!($line = self::reactionLine($r['ReactionType'], $r['TargetCreatureTemplateID'], $r['SayText'], $r['DelayInMS'], $npcId, false)))
+            if (!($line = self::reactionLine($r, 'TargetCreatureTemplateID', $npcId, false)))
                 continue;
 
             // the option text lives on the row that carries it - not necessarily on this one
@@ -591,6 +704,7 @@ abstract class EQReactions
             $options[] = array(
                 'optionId' => $r['OptionID'],
                 'text'     => $label,
+                'reqs'     => [],
                 'lines'    => []
             );
         }
@@ -624,7 +738,7 @@ abstract class EQReactions
         {
             $lines = [];
             foreach (self::collapseReactionRows($gRows, 'CreatureTemplateID') as $r)
-                $lines[] = [self::reactionLine($r['ReactionType'], $r['CreatureTemplateID'], $r['SayText'], $r['DelayInMS'], $giverId, true, $r['_count']), !!$r['FiresOnArrival']];
+                $lines[] = [self::reactionLine($r, 'CreatureTemplateID', $giverId, true, $r['_count']), !!$r['FiresOnArrival']];
 
             $out[] = array(
                 'npcId' => $giverId,
@@ -664,7 +778,7 @@ abstract class EQReactions
                 // only rows that mention this NPC are interesting here - a questgiver's own page still wants
                 // the full picture though, since "spawns X, then despawns" only reads correctly as a whole
                 $isGiver = $isGiver || $r['QuestgiverCreatureTemplateID'] == $npcId;
-                $lines[] = [self::reactionLine($r['ReactionType'], $r['CreatureTemplateID'], $r['SayText'], $r['DelayInMS'], $r['QuestgiverCreatureTemplateID'], true, $r['_count']), !!$r['FiresOnArrival']];
+                $lines[] = [self::reactionLine($r, 'CreatureTemplateID', $r['QuestgiverCreatureTemplateID'], true, $r['_count']), !!$r['FiresOnArrival']];
             }
 
             $giverId = 0;
@@ -673,11 +787,11 @@ abstract class EQReactions
                 $lines = [];
                 foreach ($qRows as $r)
                 {
-                    if ($r['CreatureTemplateID'] != $npcId)
+                    if ($r['CreatureTemplateID'] != $npcId || $r['ReactionType'] == self::REACT_SPAWNOBJECT)
                         continue;
 
                     $giverId = $giverId ?: $r['QuestgiverCreatureTemplateID'];
-                    $lines[] = [self::reactionLine($r['ReactionType'], $r['CreatureTemplateID'], $r['SayText'], $r['DelayInMS'], $r['QuestgiverCreatureTemplateID'], false, $r['_count']), !!$r['FiresOnArrival']];
+                    $lines[] = [self::reactionLine($r, 'CreatureTemplateID', $r['QuestgiverCreatureTemplateID'], false, $r['_count']), !!$r['FiresOnArrival']];
                 }
             }
 
@@ -695,6 +809,326 @@ abstract class EQReactions
         }
 
         return $out;
+    }
+
+
+    /****************/
+    /* gameobjects  */
+    /****************/
+
+    // quests and gossip options that place this gameobject - the object side of a spawnobject reaction
+    public static function getObjectSources(int $objectId) : array
+    {
+        $out = [];
+
+        if (self::hasTable(self::TBL_QUEST) && self::hasColumn(self::TBL_QUEST, 'GameObjectEntryID'))
+        {
+            $rows = DB::World()->select('SELECT * FROM '.self::TBL_QUEST.' WHERE `GameObjectEntryID` = ?d AND `ReactionType` = ?d ORDER BY `QuestTemplateID`, `ID`', $objectId, self::REACT_SPAWNOBJECT);
+            foreach ($rows as $r)
+            {
+                $line = self::reactionLine($r, 'CreatureTemplateID', 0, true);
+                if (!$line)
+                    continue;
+
+                $out[] = array(
+                    'kind'   => 'quest',
+                    'head'   => sprintf(Lang::npc('reactQuestTurnIn'), self::npcLink($r['QuestgiverCreatureTemplateID'])).' &ndash; '.self::questLink($r['QuestTemplateID']),
+                    'line'   => $line,
+                    'onWalk' => !empty($r['FiresOnArrival'])
+                );
+            }
+        }
+
+        if (self::hasTable(self::TBL_GOSSIP) && self::hasColumn(self::TBL_GOSSIP, 'GameObjectEntryID'))
+        {
+            $rows = DB::World()->select('SELECT * FROM '.self::TBL_GOSSIP.' WHERE `GameObjectEntryID` = ?d AND `ReactionType` = ?d ORDER BY `GossipCreatureTemplateID`, `OptionID`, `ID`', $objectId, self::REACT_SPAWNOBJECT);
+            foreach ($rows as $r)
+            {
+                $line = self::reactionLine($r, 'TargetCreatureTemplateID', 0, true);
+                if (!$line)
+                    continue;
+
+                $label = $r['OptionText'];
+                if ($label === '')
+                    $label = (string)DB::World()->selectCell('SELECT `OptionText` FROM '.self::TBL_GOSSIP.' WHERE `GossipCreatureTemplateID` = ?d AND `OptionID` = ?d AND `OptionText` <> "" LIMIT 1', $r['GossipCreatureTemplateID'], $r['OptionID']);
+
+                $out[] = array(
+                    'kind'   => 'gossip',
+                    'head'   => sprintf(Lang::npc('gossipVia'), self::npcLink($r['GossipCreatureTemplateID']), '<span class="q1">&laquo;'.Util::htmlEscape($label).'&raquo;</span>'),
+                    'line'   => $line,
+                    'onWalk' => !empty($r['FiresOnArrival'])
+                );
+            }
+        }
+
+        return $out;
+    }
+
+    // same idea as getReactionSpawnLocations, for gameobjects placed by a spawnobject reaction
+    public static function getObjectSpawnLocations(int $objectId) : array
+    {
+        $points = [];
+        $zones  = [];
+
+        if (self::hasTable(self::TBL_QUEST) && self::hasColumn(self::TBL_QUEST, 'GameObjectEntryID'))
+            foreach (DB::World()->select('SELECT * FROM '.self::TBL_QUEST.' WHERE `GameObjectEntryID` = ?d AND `ReactionType` = ?d', $objectId, self::REACT_SPAWNOBJECT) as $r)
+                self::addReactionPlace($points, $zones, $r, $r['QuestgiverCreatureTemplateID'], sprintf(Lang::npc('reactPinQuest'), self::questName($r['QuestTemplateID'])), false, 0, self::questArea($r['QuestTemplateID']));
+
+        if (self::hasTable(self::TBL_GOSSIP) && self::hasColumn(self::TBL_GOSSIP, 'GameObjectEntryID'))
+            foreach (DB::World()->select('SELECT * FROM '.self::TBL_GOSSIP.' WHERE `GameObjectEntryID` = ?d AND `ReactionType` = ?d', $objectId, self::REACT_SPAWNOBJECT) as $r)
+                self::addReactionPlace($points, $zones, $r, $r['GossipCreatureTemplateID'], sprintf(Lang::npc('reactPinGossip'), self::npcName($r['GossipCreatureTemplateID'])), true, 0);
+
+        return ['points' => self::mergePoints($points), 'zones' => self::flattenZones($zones)];
+    }
+
+
+    /*******************/
+    /* spawn locations */
+    /*******************/
+
+    // every map a creature template is actually placed on, with the zone it sits in there
+    private static function creaturePlacements(int $creatureId) : array
+    {
+        if (!isset(self::$placements[$creatureId]))
+            self::$placements[$creatureId] = DB::World()->select('SELECT DISTINCT `map`, `zoneId` FROM creature WHERE `id` = ?d', $creatureId) ?: [];
+
+        return self::$placements[$creatureId];
+    }
+
+    // Where a creature can actually be found: its own placements, or - when it is script-only - the placements
+    // of whatever spawns it. EQ chains these (Bzzazzt dies -> Bazzzazzt spawns, that dies -> Bizazzzt spawns),
+    // so without walking the chain the tail of it resolves to nothing at all.
+    private static function effectivePlacements(int $creatureId, array $seen = []) : array
+    {
+        if ($places = self::creaturePlacements($creatureId))
+            return $places;
+
+        if (isset($seen[$creatureId]) || count($seen) > 4)   // cycle guard + depth cap
+            return [];
+
+        $seen[$creatureId] = true;
+
+        $triggers = [];
+        if (self::hasTable(self::TBL_KILLSPAWN))
+            $triggers = DB::World()->selectCol('SELECT DISTINCT `TriggerCreatureTemplateID` FROM '.self::TBL_KILLSPAWN.' WHERE `TargetCreatureTemplateID` = ?d AND `ActionType` = ?d', $creatureId, self::ACTION_SPAWN) ?: [];
+
+        if (self::hasTable(self::TBL_GOSSIP))
+            $triggers = array_merge($triggers, DB::World()->selectCol('SELECT DISTINCT `GossipCreatureTemplateID` FROM '.self::TBL_GOSSIP.' WHERE `TargetCreatureTemplateID` = ?d AND `ReactionType` IN (?a)', $creatureId, [self::REACT_SPAWN, self::REACT_SPAWNUNIQUE]) ?: []);
+
+        if (self::hasTable(self::TBL_QUEST))
+            $triggers = array_merge($triggers, DB::World()->selectCol('SELECT DISTINCT `QuestgiverCreatureTemplateID` FROM '.self::TBL_QUEST.' WHERE `CreatureTemplateID` = ?d AND `ReactionType` IN (?a)', $creatureId, [self::REACT_SPAWN, self::REACT_SPAWNUNIQUE, self::REACT_KILLSPAWN]) ?: []);
+
+        $out = $known = [];
+        foreach (array_unique($triggers) as $triggerId)
+        {
+            foreach (self::effectivePlacements($triggerId, $seen) as $pl)
+            {
+                $key = $pl['map'].'_'.$pl['zoneId'];
+                if (isset($known[$key]))
+                    continue;
+
+                $known[$key] = true;
+                $out[]       = $pl;
+            }
+        }
+
+        return $out;
+    }
+
+    // An EQ zone map holds exactly one area, so a bare MapID is enough to name the zone. Continent maps
+    // (and anything else holding several areas) stay unresolved rather than being guessed at.
+    private static function areaForMap(int $mapId) : int
+    {
+        if (!$mapId)
+            return 0;
+
+        $areas = DB::Aowow()->selectCol('SELECT DISTINCT `areaId` FROM ?_worldmaparea WHERE `mapId` = ?d', $mapId);
+
+        return count($areas) == 1 ? (int)$areas[0] : 0;
+    }
+
+    private static function mapForArea(int $areaId) : int
+    {
+        // lowest mapId is the base zone map; the converter emits extra rows for dungeon/raid variants
+        return $areaId ? (int)DB::Aowow()->selectCell('SELECT `mapId` FROM ?_worldmaparea WHERE `areaId` = ?d ORDER BY `mapId` LIMIT 1', $areaId) : 0;
+    }
+
+    // EQ quests carry their zone in zoneOrSort (WoW quests use negative values for sort categories)
+    private static function questArea(int $questId) : int
+    {
+        $area = (int)DB::Aowow()->selectCell('SELECT `zoneOrSort` FROM ?_quests WHERE `id` = ?d', $questId);
+
+        return $area > 0 ? $area : 0;
+    }
+
+    private static function mapPoint(int $mapId, float $x, float $y, string $label) : ?array
+    {
+        if (!$x && !$y)
+            return null;
+
+        if (!($points = Game::worldPosToZonePos($mapId, $x, $y)))
+            return null;
+
+        $p = $points[0];                                    // ordered multifloor first, then nearest to map center
+
+        return ['areaId' => $p['areaId'], 'floor' => $p['floor'], 'posX' => $p['posX'], 'posY' => $p['posY'], 'labels' => [$label]];
+    }
+
+    // a row behind a walkto resolves its npc-relative position against where the walker stopped
+    private static function walkDestination(array $r, bool $isGossip) : ?array
+    {
+        $walkTypes = [self::REACT_WALKTO, self::REACT_WALKGRID];
+
+        if ($isGossip)
+            $row = DB::World()->selectRow('SELECT `PositionX`, `PositionY` FROM '.self::TBL_GOSSIP.' WHERE `GossipCreatureTemplateID` = ?d AND `OptionID` = ?d AND `ReactionType` IN (?a) AND `FiresOnArrival` = 0 AND `ID` < ?d ORDER BY `ID` DESC LIMIT 1',
+                $r['GossipCreatureTemplateID'], $r['OptionID'], $walkTypes, $r['ID']);
+        else
+            $row = DB::World()->selectRow('SELECT `PositionX`, `PositionY` FROM '.self::TBL_QUEST.' WHERE `QuestTemplateID` = ?d AND `ReactionType` IN (?a) AND `FiresOnArrival` = 0 AND `ID` < ?d ORDER BY `ID` DESC LIMIT 1',
+                $r['QuestTemplateID'], $walkTypes, $r['ID']);
+
+        return $row ? [(float)$row['PositionX'], (float)$row['PositionY']] : null;
+    }
+
+    // resolves one gossip/quest reaction row into map pins, or into a bare zone when the spot is not fixed
+    private static function addReactionPlace(array &$points, array &$zones, array $r, int $triggerId, string $label, bool $isGossip, int $npcId, int $fallbackAreaId = 0) : void
+    {
+        $places = self::effectivePlacements($triggerId, [$npcId => true]);
+
+        // a script-only trigger that nothing else places either - fall back to the zone the quest belongs to
+        if (!$places && $fallbackAreaId && ($fallbackMap = self::mapForArea($fallbackAreaId)))
+            $places = [['map' => $fallbackMap, 'zoneId' => $fallbackAreaId]];
+
+        // anchored on the player - lands wherever the turn-in or the conversation happened
+        if ($r['UsePlayerX'] || $r['UsePlayerY'])
+        {
+            foreach ($places as $pl)
+                $zones[$pl['zoneId']][$label] = true;
+
+            return;
+        }
+
+        $x = (float)$r['PositionX'];
+        $y = (float)$r['PositionY'];
+
+        if ($r['UseNpcX'] || $r['UseNpcY'])
+        {
+            if ($r['FiresOnArrival'])                       // "at my feet" after the walk = the walkto destination
+            {
+                if ($walk = self::walkDestination($r, $isGossip))
+                    [$x, $y] = $walk;
+            }
+            else                                            // "at my feet" right now = wherever the trigger stands
+            {
+                $own = DB::Aowow()->select('SELECT `areaId`, `floor`, `posX`, `posY` FROM ?_spawns WHERE `type` = ?d AND `typeId` = ?d AND `posX` > 0 AND `posY` > 0', Type::NPC, $triggerId);
+                foreach ($own as $s)
+                    $points[] = ['areaId' => $s['areaId'], 'floor' => $s['floor'], 'posX' => $s['posX'], 'posY' => $s['posY'], 'labels' => [$label]];
+
+                if (!$own)                                  // the trigger is script-only too - fall back to its zones
+                    foreach ($places as $pl)
+                        $zones[$pl['zoneId']][$label] = true;
+
+                return;
+            }
+        }
+
+        if (!$x && !$y)
+        {
+            foreach ($places as $pl)
+                $zones[$pl['zoneId']][$label] = true;
+
+            return;
+        }
+
+        // the gossip and quest tables carry no map of their own - it is whichever map the trigger is placed on
+        $pinned = false;
+        foreach ($places as $pl)
+        {
+            if (!($p = self::mapPoint($pl['map'], $x, $y, $label)))
+                continue;
+
+            $points[] = $p;
+            $pinned   = true;
+        }
+
+        // the coordinates fall outside every map rect we tried - still name the zone
+        if (!$pinned)
+            foreach ($places as $pl)
+                $zones[$pl['zoneId']][$label] = true;
+    }
+
+    // Where a triggered spawn actually appears. These creatures usually have no `creature` row at all, so
+    // aowow's spawn table knows nothing about them and their page would otherwise read "location unknown".
+    // Fixed positions become map pins; a position taken from a corpse or from the player varies per trigger,
+    // so those are only reported by zone.
+    public static function getReactionSpawnLocations(int $npcId) : array
+    {
+        $points = [];
+        $zones  = [];
+
+        // kill / combat / evade / ooctimer spawns are the only ones carrying their own MapID
+        if (self::hasTable(self::TBL_KILLSPAWN))
+        {
+            foreach (DB::World()->select('SELECT * FROM '.self::TBL_KILLSPAWN.' WHERE `TargetCreatureTemplateID` = ?d AND `ActionType` = ?d', $npcId, self::ACTION_SPAWN) as $r)
+            {
+                $label = sprintf(Lang::npc('reactPinKill'), self::npcName($r['TriggerCreatureTemplateID']));
+
+                if ($r['SpawnAtCorpse'])                    // Position* are offsets from a corpse that can be anywhere
+                {
+                    $placed = false;
+                    foreach (self::effectivePlacements($r['TriggerCreatureTemplateID'], [$npcId => true]) as $pl)
+                    {
+                        if ($r['MapID'] && $pl['map'] != $r['MapID'])
+                            continue;
+
+                        $zones[$pl['zoneId']][$label] = true;
+                        $placed = true;
+                    }
+
+                    // nothing places the trigger either, but the row still names the map it happens on
+                    if (!$placed && ($areaId = self::areaForMap($r['MapID'])))
+                        $zones[$areaId][$label] = true;
+
+                    continue;
+                }
+
+                if ($p = self::mapPoint($r['MapID'], $r['PositionX'], $r['PositionY'], $label))
+                    $points[] = $p;
+            }
+        }
+
+        if (self::hasTable(self::TBL_GOSSIP))
+            foreach (DB::World()->select('SELECT * FROM '.self::TBL_GOSSIP.' WHERE `TargetCreatureTemplateID` = ?d AND `ReactionType` IN (?a)', $npcId, [self::REACT_SPAWN, self::REACT_SPAWNUNIQUE]) as $r)
+                self::addReactionPlace($points, $zones, $r, $r['GossipCreatureTemplateID'], sprintf(Lang::npc('reactPinGossip'), self::npcName($r['GossipCreatureTemplateID'])), true, $npcId);
+
+        if (self::hasTable(self::TBL_QUEST))
+            foreach (DB::World()->select('SELECT * FROM '.self::TBL_QUEST.' WHERE `CreatureTemplateID` = ?d AND `ReactionType` IN (?a)', $npcId, [self::REACT_SPAWN, self::REACT_SPAWNUNIQUE, self::REACT_KILLSPAWN]) as $r)
+                self::addReactionPlace($points, $zones, $r, $r['QuestgiverCreatureTemplateID'], sprintf(Lang::npc('reactPinQuest'), self::questName($r['QuestTemplateID'])), false, $npcId, self::questArea($r['QuestTemplateID']));
+
+        return ['points' => self::mergePoints($points), 'zones' => self::flattenZones($zones)];
+    }
+
+    // the same spot is reached by several rows more often than not (repeat quests, N copies at one point)
+    private static function mergePoints(array $points) : array
+    {
+        $merged = [];
+        foreach ($points as $p)
+        {
+            $key = $p['areaId'].'_'.$p['floor'].'_'.round($p['posX'], 1).'_'.round($p['posY'], 1);
+            if (isset($merged[$key]))
+                $merged[$key]['labels'] = array_values(array_unique(array_merge($merged[$key]['labels'], $p['labels'])));
+            else
+                $merged[$key] = $p;
+        }
+
+        return array_values($merged);
+    }
+
+    private static function flattenZones(array $zones) : array
+    {
+        foreach ($zones as $areaId => $labels)
+            $zones[$areaId] = array_keys($labels);
+
+        return $zones;
     }
 }
 

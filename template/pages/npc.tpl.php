@@ -33,9 +33,18 @@ if ($this->placeholder):
 <?php
 elseif (!empty($this->map)):
     $this->brick('mapper');
-else:
+// EQWOW - a triggered creature with only variable-position spawns still has a zone to report
+elseif (!$this->eqSpawnZones):
     echo '                '.Lang::npc('unkPosition')."\n";
 endif;
+
+// EQWOW begin - zones of triggered spawns that land on a corpse or on the player, so they get no pin
+if ($this->eqSpawnZones):
+    echo '                <div>'.Lang::npc('reactSpawnDynamic').' ';
+    echo Lang::concat($this->eqSpawnZones, true, function ($v, $k) { return '<a href="?zone='.$k.'">'.$v.'</a>'; });
+    echo ".</div>\n";
+endif;
+// EQWOW end
 
 if ($this->quotes[0]):
 ?>
@@ -249,7 +258,8 @@ if (!empty($this->gossip['options'])):
 
     echo "                <ul>\n";
     foreach ($this->gossip['options'] as $opt):
-        echo '                    <li><div><span class="q4">'.Util::htmlEscape($opt['text'])."</span></div>\n";
+        $reqs = !empty($opt['reqs']) ? ' <small class="q0">('.implode('; ', $opt['reqs']).')</small>' : '';
+        echo '                    <li><div><span class="q4">'.Util::htmlEscape($opt['text']).'</span>'.$reqs."</div>\n";
         if ($opt['lines']):
             echo "                        <ul>\n";
             foreach ($opt['lines'] as $line)

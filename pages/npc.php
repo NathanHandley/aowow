@@ -19,6 +19,7 @@ class NpcPage extends GenericPage
     protected $gossip       = [];                           // EQWOW - gossip menu of this NPC
     protected $gossipSrc    = [];                           // EQWOW - gossip options elsewhere that spawn this NPC
     protected $questReact   = [];                           // EQWOW - quest turn-ins that spawn this NPC / that it reacts to
+    protected $eqSpawnZones = [];                           // EQWOW - zones of triggered spawns whose position varies
     protected $subname      = '';
 
     protected $type          = Type::NPC;
@@ -372,12 +373,37 @@ class NpcPage extends GenericPage
         /****************/
 
         // get spawns and path
-        $map = null;
-        if ($spawns = $this->subject->getSpawns(SPAWNINFO_FULL))
+        $map    = null;
+        $spawns = $this->subject->getSpawns(SPAWNINFO_FULL);
+
+        // EQWOW begin - triggered creatures have no `creature` row, so ?_spawns knows nothing about them.
+        // Fold the fixed spawn points of their kill/gossip/quest reactions into the map; positions that
+        // depend on a corpse or on the player are handed to the template as bare zones instead.
+        $eqSpawnLoc   = EQReactions::getReactionSpawnLocations($this->typeId);
+        $eqSpawnZones = [];
+        foreach ($eqSpawnLoc['points'] as $p)
+        {
+            $opts = array(
+                'type'    => 4,                             // purple pip, as used for other script-placed spawns
+                'tooltip' => [$this->subject->getField('name', true) => ['info' => $p['labels']]]
+            );
+
+            $spawns[$p['areaId']][$p['floor']]['coords'][] = [$p['posX'], $p['posY'], $opts];
+            $spawns[$p['areaId']][$p['floor']]['count']    = ($spawns[$p['areaId']][$p['floor']]['count'] ?? 0) + 1;
+        }
+
+        foreach ($eqSpawnLoc['zones'] as $areaId => $labels)
+            if ($areaId && empty($spawns[$areaId]) && ($_ = ZoneList::getName($areaId)))
+                $eqSpawnZones[$areaId] = $_;
+        // EQWOW end
+
+        if ($spawns)
         {
             $map = ['data' => ['parent' => 'mapper-generic'], 'mapperData' => &$spawns];
             foreach ($spawns as $areaId => &$areaData)
                 $map['extra'][$areaId] = ZoneList::getName($areaId);
+
+            unset($areaData);
         }
 
         // smart AI
@@ -519,6 +545,7 @@ class NpcPage extends GenericPage
         $this->gossip       = $gossip;                      // EQWOW - gossip menu of this NPC
         $this->gossipSrc    = EQReactions::getGossipSources($this->typeId);
         $this->questReact   = EQReactions::getQuestSources($this->typeId);
+        $this->eqSpawnZones = $eqSpawnZones;                // EQWOW - variable-position triggered spawns
         $this->quotes       = $this->getQuotes();
         $this->reputation   = $this->getOnKillRep($_altIds, $mapType);
         $this->smartAI      = $sai ? $sai->getMarkdown() : null;

@@ -27,9 +27,37 @@ endif;
 
 if (!empty($this->map)):
     $this->brick('mapper');
-else:
+// EQWOW - an object only placed by a reaction still has a zone to report
+elseif (!$this->eqSpawnZones):
     echo Lang::gameObject('unkPosition');
 endif;
+
+// EQWOW begin - placements whose position varies, and the quests/gossip that place this object
+if ($this->eqSpawnZones):
+    echo '                <div>'.Lang::gameObject('reactSpawnDynamic').' ';
+    echo Lang::concat($this->eqSpawnZones, true, function ($v, $k) { return '<a href="?zone='.$k.'">'.$v.'</a>'; });
+    echo ".</div>\n";
+endif;
+
+if ($this->objectSrc):
+?>
+                <h3><?=Lang::gameObject('placedBy'); ?></h3>
+<?php
+    echo "                <ul>\n";
+    foreach ($this->objectSrc as $src):
+        $head = $src['head'];
+        if ($src['onWalk'])
+            $head .= ' <small class="q0">('.Lang::npc('reactOnArrival').')</small>';
+
+        $notes = $src['line']['notes'] ? ' <small class="q0">('.implode('; ', $src['line']['notes']).')</small>' : '';
+
+        echo '                    <li><div>'.$head."</div>\n";
+        echo '                        <ul><li><div>'.$src['line']['text'].$notes."</div></li></ul>\n";
+        echo "                    </li>\n";
+    endforeach;
+    echo "                </ul>\n";
+endif;
+// EQWOW end
 
 $this->brick('book');
 

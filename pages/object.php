@@ -12,6 +12,8 @@ class ObjectPage extends GenericPage
 
     protected $pageText      = [];
     protected $relBoss       = null;
+    protected $objectSrc     = [];                          // EQWOW - quests/gossip that place this object
+    protected $eqSpawnZones  = [];                          // EQWOW - zones of placements whose position varies
 
     protected $type          = Type::OBJECT;
     protected $typeId        = 0;
@@ -217,12 +219,36 @@ class ObjectPage extends GenericPage
             );
 
         // get spawns and path
-        $map = null;
-        if ($spawns = $this->subject->getSpawns(SPAWNINFO_FULL))
+        $map    = null;
+        $spawns = $this->subject->getSpawns(SPAWNINFO_FULL);
+
+        // EQWOW begin - an object placed by a spawnobject reaction has no `gameobject` row, so ?_spawns
+        // knows nothing about it. Same treatment as npc.php: fixed spots become pins, variable ones a zone.
+        $eqSpawnLoc   = EQReactions::getObjectSpawnLocations($this->typeId);
+        $eqSpawnZones = [];
+        foreach ($eqSpawnLoc['points'] as $p)
+        {
+            $opts = array(
+                'type'    => 4,
+                'tooltip' => [$this->subject->getField('name', true) => ['info' => $p['labels']]]
+            );
+
+            $spawns[$p['areaId']][$p['floor']]['coords'][] = [$p['posX'], $p['posY'], $opts];
+            $spawns[$p['areaId']][$p['floor']]['count']    = ($spawns[$p['areaId']][$p['floor']]['count'] ?? 0) + 1;
+        }
+
+        foreach ($eqSpawnLoc['zones'] as $areaId => $labels)
+            if ($areaId && empty($spawns[$areaId]) && ($_ = ZoneList::getName($areaId)))
+                $eqSpawnZones[$areaId] = $_;
+        // EQWOW end
+
+        if ($spawns)
         {
             $map = ['data' => ['parent' => 'mapper-generic'], 'mapperData' => &$spawns];
             foreach ($spawns as $areaId => &$areaData)
                 $map['extra'][$areaId] = ZoneList::getName($areaId);
+
+            unset($areaData);
         }
 
 
@@ -269,6 +295,8 @@ class ObjectPage extends GenericPage
         $this->map         = $map;
         $this->infobox     = $infobox ? '[ul][li]'.implode('[/li][li]', $infobox).'[/li][/ul]' : null;
         $this->relBoss     = $relBoss;
+        $this->objectSrc   = EQReactions::getObjectSources($this->typeId);  // EQWOW
+        $this->eqSpawnZones= $eqSpawnZones;                                 // EQWOW
         $this->smartAI     = $sai ? $sai->getMarkdown() : null;
         $this->redButtons  = array(
             BUTTON_WOWHEAD => true,

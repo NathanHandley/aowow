@@ -1014,6 +1014,9 @@ $lang = array(
         'cat'           => [0 => "Other", 3 => "Containers", 6 => "Traps", 9 => "Books", 25 => "Fishing Pools", -5 => "Chests", -3 => "Herbs", -4 => "Mineral Veins", -2 => "Quest", -6 => "Tools"],
         'type'          => [              3 => "Container",  6 => "",      9 => "Book",  25 => "",              -5 => "Chest",  -3 => "Herb",  -4 => "Mineral Vein",  -2 => "Quest", -6 => ""],         // used for tooltip
         'unkPosition'   => "The location of this object is unknown.",
+        // EQWOW - objects placed by a quest/gossip spawnobject reaction instead of a gameobject spawn
+        'placedBy'          => "Placed By",
+        'reactSpawnDynamic' => "This object is placed by a triggered reaction, at a position that varies, in",
         'npcLootPH'     => 'The <b>%s</b> contains the loot from the fight against <a href="?npc=%d">%s</a>. It spawns after this NPC dies.',
         'key'           => "Key",
         'focus'         => "Spell Focus",
@@ -1108,9 +1111,22 @@ $lang = array(
         'reactYellsSomething' => "yells a line of text",
         'reactEmotesSomething' => "plays an emote",
         'reactWalksTo'      => "walks to another spot, and on arrival",
+        'reactWalksPath'    => "walks a set path, and on arrival",
+        'reactPathNodes'    => "%d waypoints",
+        'reactPathRuns'     => "at a run",
+        'reactSpawnsObject' => "places %s",
+        'reactObjectLifetime' => "stays for %s",
+        'reactUnknownObject'=> "an unknown object",
+        'reactReqQuest'     => "only after %s",
+        'reactReqNear'      => "only within %d yards of a certain spot",
         'reactArmsKillSpawn'=> "arms a trap: killing the questgiver afterwards spawns %s",
         'reactOneOf'        => "one of the following, picked at random",
         'reactCopies'       => "%d&times; %s",
+        // spawn locations of triggered creatures (they have no creature row, so no ?_spawns entry)
+        'reactPinKill'      => "Triggered spawn: killing %s",
+        'reactPinGossip'    => "Triggered spawn: talking to %s",
+        'reactPinQuest'     => "Triggered spawn: turning in %s",
+        'reactSpawnDynamic' => "This NPC is spawned by a triggered reaction, at a position that varies, in",
         // notes
         'reactChance'       => "%s chance",
         'reactAfterDelay'   => "after %s",
