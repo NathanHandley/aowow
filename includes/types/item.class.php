@@ -758,7 +758,9 @@ class ItemList extends BaseType
             $type = $this->curTpl['statType'.$j];
             $qty  = $this->curTpl['statValue'.$j];
 
-            if (!$qty || $type <= 0)
+            // EQWOW - ITEM_MOD_MANA is type 0, so $type <= 0 skipped every flat +mana line in the tooltip;
+            // an unused slot is identified by its value being 0 (see the same fix in StatsContainer::fromItem)
+            if (!$qty || $type < 0)
                 continue;
 
             $statId = Stat::getIndexFrom(Stat::IDX_ITEM_MOD, $type);

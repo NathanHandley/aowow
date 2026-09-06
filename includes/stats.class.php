@@ -353,7 +353,10 @@ class StatsContainer
         {
             $mod = $item['statType'.$i];
             $val = $item['statValue'.$i];
-            if (!$mod || !$val)
+            // EQWOW - an unused stat slot is (type 0, value 0), but ITEM_MOD_MANA is itself type 0, so the
+            // slot has to be judged by its value alone. Testing !$mod dropped every flat +mana on an item
+            // (1291 of them in EQ gear; only one stock WoW item has any, which is why this went unnoticed).
+            if (!$val || $mod < 0)
                 continue;
 
             if ($idx = Stat::getIndexFrom(Stat::IDX_ITEM_MOD, $mod))
