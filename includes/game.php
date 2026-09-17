@@ -292,10 +292,17 @@ class Game
                 return [];
         }
 
+        // EQWOW - AzerothCore dropped spell_learn_spell (gone from acore_world since the 2026-09-01 rebuild). selectCol()
+        // returns false for a missing table, and array_merge(false, ...) threw on every spell page and on every item with
+        // an on-use spell, which aowow renders as "Page not found". Only query the table if it exists; treat a failed query as empty.
+        static $hasLearnSpellTable = null;
+        if ($hasLearnSpellTable === null)
+            $hasLearnSpellTable = (bool)DB::World()->selectCell('SHOW TABLES LIKE ?', 'spell_learn_spell');
+
         // note: omits required spell and chance in skill_discovery_template
         $data = array_merge(
-            DB::World()->selectCol('SELECT spellId FROM spell_learn_spell WHERE entry IN (?a)', $lookup),
-            DB::World()->selectCol('SELECT spellId FROM skill_discovery_template WHERE reqSpell IN (?a)', $lookup),
+            $hasLearnSpellTable ? (DB::World()->selectCol('SELECT spellId FROM spell_learn_spell WHERE entry IN (?a)', $lookup) ?: []) : [],
+            DB::World()->selectCol('SELECT spellId FROM skill_discovery_template WHERE reqSpell IN (?a)', $lookup) ?: [],
             $extraIds
         );
 

@@ -645,7 +645,13 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         DB::Aowow()->query('UPDATE ?_spell s, dbc_skillline sl SET s.typeCat = 7 WHERE s.typeCat = 0 AND s.skillLine1 = sl.id AND sl.categoryId = 7');
 
         // hide some internal/unused stuffs
-        DB::Aowow()->query('UPDATE ?_spell s SET s.cuFlags = ?d WHERE s.typeCat = 7 AND (
+        // EQWOW - these heuristics target stock WoW data. EQ class spells are nearly all baseLevel 1 with reqClassMask 0 and
+        // can legitimately be named "Improved ..." (e.g. Spook the Dead, Improved Invis to Undead), which hid them from the EQ
+        // class spell lists and search. Exempt spells an EQ class learns (?_everquest_spell_learn, built by the earlier
+        // 'everquest' step); EQ NPC/effect spells in the same id range stay hidden as before.
+        $eqLearned = DB::Aowow()->selectCell('SHOW TABLES LIKE ?', '%everquest_spell_learn')
+            ? DB::Aowow()->selectCol('SELECT DISTINCT `spellId` FROM ?_everquest_spell_learn') : [];
+        DB::Aowow()->query('UPDATE ?_spell s SET s.cuFlags = ?d WHERE s.typeCat = 7 AND s.id NOT IN (?a) AND (
             s.name_loc0 LIKE "%passive%" OR s.name_loc0 LIKE "%effect%" OR s.name_loc0 LIKE "%improved%" OR s.name_loc0 LIKE "%prototype%" OR                                          -- can probably be extended
             (s.id NOT IN (47241, 59879, 59671) AND s.baseLevel <= 1 AND s.reqclassMask = 0)  OR                                                                                        -- can probably still be extended
             (s.SpellFamilyId = 15 AND s.SpellFamilyFlags1 & 0x2000 AND s.SpellDescriptionVariableId <> 84) OR                                                                          -- DK: Skill Coil
@@ -655,7 +661,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
             (s.SpellFamilyId = 8  AND s.attributes0 = 0x50 AND s.attributes1 & 0x400) OR                                                                                               -- Rogue: Intuition (dropped Talent..? looks nice though)
             (s.SpellfamilyId = 11 AND s.SpellFamilyFlags1 & 3 AND s.attributes1 = 1024) OR                                                                                             -- Shaman: Lightning Overload procs
             (s.attributes0 = 0x20000000 AND s.attributes3 = 0x10000000)                                                                                                                -- Master Demonologist (FamilyId = 0)
-        )', CUSTOM_EXCLUDE_FOR_LISTVIEW);
+        )', CUSTOM_EXCLUDE_FOR_LISTVIEW, $eqLearned ?: [0]);
 
         foreach (ChrClass::cases() as $cl)
             DB::Aowow()->query(

@@ -1132,8 +1132,16 @@ class ItemList extends BaseType
             if (!$craftSpell->error)
             {
                 $xCraft = '';
+                // EQWOW - converter descriptions carry client UI sequences (e.g. "Teaches the spell: X|n|cFFFFFFFFEQ Classes: SHM|r").
+                // Link only the text before the first line break and render the remainder's |n / |c..|r sequences as html.
                 if ($desc = $this->getField('description', true))
-                    $x .= '<span class="q2">'.Lang::item('trigger', SPELL_TRIGGER_USE).' <a href="?spell='.$this->curTpl['spellId2'].'">'.$desc.'</a></span><br />';
+                {
+                    $descParts = preg_split('/\|n/i', $desc, 2);
+                    $x .= '<span class="q2">'.Lang::item('trigger', SPELL_TRIGGER_USE).' <a href="?spell='.$this->curTpl['spellId2'].'">'.Util::parseHtmlText($descParts[0]).'</a>';
+                    if (isset($descParts[1]))
+                        $x .= '<br />'.Util::parseHtmlText($descParts[1]);
+                    $x .= '</span><br />';
+                }
 
                 // recipe handling (some stray Techniques have subclass == 0), place at bottom of tooltipp
                 if ($_class == ITEM_CLASS_RECIPE || $this->curTpl['bagFamily'] == 16)
