@@ -20,6 +20,14 @@
 <?php
     $this->brick('article');
 
+// EQWOW begin - open world copies of EQ raid bosses are scaled up by mod-everquest
+if ($this->worldBoss):
+    echo '                <div class="pad"></div><div><b>'.sprintf(Lang::npc('worldBossNote'),
+        Lang::npc($this->worldBoss['miniBoss'] ? 'worldBossNoteMiniBoss' : 'worldBossNoteRaidBoss'),
+        EQWorldBoss::formatMultiplier($this->worldBoss['health']), EQWorldBoss::formatMultiplier($this->worldBoss['damage']), $this->worldBoss['loot'])."</b></div><div class=\"pad\"></div>\n";
+endif;
+// EQWOW end
+
 if ($this->accessory):
     echo '                <div>'.Lang::npc('accessoryFor').' ';
     echo Lang::concat($this->accessory, true, function ($v, $k) { return '<a href="?npc='.$v[0].'">'.$v[1].'</a>'; });

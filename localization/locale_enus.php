@@ -1066,6 +1066,14 @@ $lang = array(
         'armor'         => "Armor",
         'resistances'   => "Resistances",
         'foundIn'       => "This NPC can be found in",
+        // EQWOW begin - open world raid boss scaling (EQWorldBoss)
+        'worldBossStats'    => "Open World Stats",
+        'worldBossNote'     => "The open world version of this %s (outside of instances) is considerably more dangerous than its instanced copy: it has %s times the health, its combat skills are more powerful (melee, breaths, nukes, damage over time and procs all deal %s times the damage), and its loot table is rolled %d times per kill.",
+        'worldBossNoteRaidBoss'  => "raid boss",
+        'worldBossNoteMiniBoss'  => "raid mini boss",
+        'worldBossDrops'    => "Drops (Open World)",
+        'worldBossDropsNote'=> "Open world version: the loot table is rolled %d times per kill and everything is pooled into one corpse (coin is not multiplied). Chance is the chance to get at least one; a corpse holds at most 18 loot slots, so the very largest tables can occasionally lose a bonus item.",
+        // EQWOW end
         // EQWOW begin - spawn pool display
         'spawnPools'        => "Spawn Pools",
         'spawnPoolsDesc'    => "This NPC is part of a spawn pool. Percentages are the chance to be picked each time a spawn slot repopulates",

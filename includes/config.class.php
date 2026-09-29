@@ -160,6 +160,12 @@ class Cfg
         return '';
     }
 
+    // EQWOW - lets optional settings fall back to a default instead of raising 'cfg not defined'
+    public static function has(string $key) : bool
+    {
+        return isset(self::$store[strtolower($key)]);
+    }
+
     public static function get(string $key, bool $fromDB = false, bool $fullInfo = false) // : int|float|string
     {
         $key = strtolower($key);

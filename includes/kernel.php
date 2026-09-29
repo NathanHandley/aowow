@@ -81,6 +81,10 @@ spl_autoload_register(function ($class) {
         case 'EQReactions':
             require_once 'includes/components/EQWOW/EQReactions.class.php';
             break;
+        // EQWOW - open world raid boss scaling (mirrors mod-everquest EverQuest.CreatureWorldBoss.*)
+        case 'EQWorldBoss':
+            require_once 'includes/components/EQWOW/EQWorldBoss.class.php';
+            break;
     }
 });
 

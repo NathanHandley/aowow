@@ -20,6 +20,7 @@ class NpcPage extends GenericPage
     protected $gossipSrc    = [];                           // EQWOW - gossip options elsewhere that spawn this NPC
     protected $questReact   = [];                           // EQWOW - quest turn-ins that spawn this NPC / that it reacts to
     protected $eqSpawnZones = [];                           // EQWOW - zones of triggered spawns whose position varies
+    protected $worldBoss    = null;                         // EQWOW - open world raid boss scaling note
     protected $subname      = '';
 
     protected $type          = Type::NPC;
@@ -367,6 +368,35 @@ class NpcPage extends GenericPage
         if ($stats)
             $infobox[] = Lang::npc('stats').($modes ? ' ('.Lang::npc('modes', $mapType, 0).')' : null).Lang::main('colon').'[ul][li]'.implode('[/li][li]', $stats).'[/li][/ul]';
 
+        // EQWOW begin - the open world copy of an EQ raid boss / mini boss is scaled at runtime by mod-everquest
+        // (same creature_template as the instanced copy), so show its numbers next to the template's
+        $worldBoss = null;
+        if (EQWorldBoss::hasWorldVersion($this->typeId))
+        {
+            $worldBoss = array(
+                'miniBoss' => EQWorldBoss::getDifficultyType($this->typeId) == EQWorldBoss::DIFFICULTY_RAIDMINIBOSS,
+                'health'   => EQWorldBoss::healthMultiplier(),
+                'damage'   => EQWorldBoss::damageMultiplier(),
+                'loot'     => EQWorldBoss::lootMultiplier()
+            );
+
+            $wbStats = [];
+            $health  = array_map(['EQWorldBoss', 'scaleHealth'], $this->subject->getBaseStats('health'));
+            $wbStats[] = Util::ucFirst(Lang::spell('powerTypes', -2)).Lang::main('colon').($health[0] < $health[1] ? Lang::nf($health[0]).' - '.Lang::nf($health[1]) : Lang::nf($health[0]));
+
+            $melee = array_map(['EQWorldBoss', 'scaleDamage'], $this->subject->getBaseStats('melee'));
+            if ($_ = $this->subject->getField('dmgSchool'))
+                $wbStats[] = Lang::npc('melee').Lang::main('colon').Lang::nf($melee[0]).' - '.Lang::nf($melee[1]).' ('.Lang::game('sc', $_).')';
+            else
+                $wbStats[] = Lang::npc('melee').Lang::main('colon').Lang::nf($melee[0]).' - '.Lang::nf($melee[1]);
+
+            $ranged = array_map(['EQWorldBoss', 'scaleDamage'], $this->subject->getBaseStats('ranged'));
+            $wbStats[] = Lang::npc('ranged').Lang::main('colon').Lang::nf($ranged[0]).' - '.Lang::nf($ranged[1]);
+
+            $infobox[] = Lang::npc('worldBossStats').Lang::main('colon').'[ul][li]'.implode('[/li][li]', $wbStats).'[/li][/ul]';
+        }
+        // EQWOW end
+
 
         /****************/
         /* Main Content */
@@ -546,6 +576,7 @@ class NpcPage extends GenericPage
         $this->gossipSrc    = EQReactions::getGossipSources($this->typeId);
         $this->questReact   = EQReactions::getQuestSources($this->typeId);
         $this->eqSpawnZones = $eqSpawnZones;                // EQWOW - variable-position triggered spawns
+        $this->worldBoss    = $worldBoss;                   // EQWOW - open world raid boss scaling
         $this->quotes       = $this->getQuotes();
         $this->reputation   = $this->getOnKillRep($_altIds, $mapType);
         $this->smartAI      = $sai ? $sai->getMarkdown() : null;
@@ -894,6 +925,18 @@ class NpcPage extends GenericPage
                     $tabData['hiddenCols'] = $hiddenCols;
 
                 $this->lvTabs[] = [ItemList::$brickFile, $tabData];
+
+                // EQWOW begin - open world copy rolls the whole table several times per kill
+                if ($lootTpl == LOOT_CREATURE && $tabId == 'drops' && $this->worldBoss && $this->worldBoss['loot'] > 1)
+                {
+                    $tabData['data'] = EQWorldBoss::scaleLootRows($tabData['data']);
+                    $tabData['name'] = Lang::npc('worldBossDrops');
+                    $tabData['id']   = 'drops-world';
+                    $tabData['note'] = sprintf(Lang::npc('worldBossDropsNote'), $this->worldBoss['loot']);
+
+                    $this->lvTabs[] = [ItemList::$brickFile, $tabData];
+                }
+                // EQWOW end
             }
         }
 
