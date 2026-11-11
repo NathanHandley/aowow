@@ -307,7 +307,7 @@ class SpellPage extends GenericPage
 
         // append glyph symbol if available
         $glyphId = 0;
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
             if ($this->subject->getField('effect'.$i.'Id') == SPELL_EFFECT_APPLY_GLYPH)
                 $glyphId = $this->subject->getField('effect'.$i.'MiscValue');
 
@@ -380,7 +380,7 @@ class SpellPage extends GenericPage
         $ubSAI = SmartAI::getOwnerOfSpellCast($this->typeId);
 
         // tab: abilities [of shapeshift form]
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
         {
             if ($this->subject->getField('effect'.$i.'AuraId') != 36)
                 continue;
@@ -418,7 +418,7 @@ class SpellPage extends GenericPage
         $modifiesData = [];
         $hideSkillCol = true;
 
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
         {
             if (!in_array($this->subject->getField('effect'.$i.'AuraId'), self::$modAuras))
                 continue;
@@ -492,7 +492,7 @@ class SpellPage extends GenericPage
             &$sub
         ];
 
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
         {
             $m1 = $this->subject->getField('spellFamilyFlags1');
             $m2 = $this->subject->getField('spellFamilyFlags2');
@@ -537,12 +537,11 @@ class SpellPage extends GenericPage
         // tab: see also
         $conditions = array(
             ['s.schoolMask', $this->subject->getField('schoolMask')],
-            ['s.effect1Id', $this->subject->getField('effect1Id')],
-            ['s.effect2Id', $this->subject->getField('effect2Id')],
-            ['s.effect3Id', $this->subject->getField('effect3Id')],
             ['s.id', $this->subject->id, '!'],
             ['s.name_loc'.Lang::getLocale()->value, $this->subject->getField('name', true)]
         );
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $conditions[] = ['s.effect'.$i.'Id', $this->subject->getField('effect'.$i.'Id')];
 
         $saSpells = new SpellList($conditions);
         if (!$saSpells->error)
@@ -627,12 +626,9 @@ class SpellPage extends GenericPage
         // tab: used by - spell
         if ($so = DB::Aowow()->selectCell('SELECT id FROM ?_spelloverride WHERE spellId1 = ?d OR spellId2 = ?d OR spellId3 = ?d OR spellId4 = ?d OR spellId5 = ?d', $this->subject->id, $this->subject->id, $this->subject->id, $this->subject->id, $this->subject->id))
         {
-            $conditions = array(
-                'OR',
-                ['AND', ['effect1AuraId', SPELL_AURA_OVERRIDE_SPELLS], ['effect1MiscValue', $so]],
-                ['AND', ['effect2AuraId', SPELL_AURA_OVERRIDE_SPELLS], ['effect2MiscValue', $so]],
-                ['AND', ['effect3AuraId', SPELL_AURA_OVERRIDE_SPELLS], ['effect3MiscValue', $so]]
-            );
+            $conditions = ['OR'];
+            for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
+                $conditions[] = ['AND', ['effect'.$i.'AuraId', SPELL_AURA_OVERRIDE_SPELLS], ['effect'.$i.'MiscValue', $so]];
             $ubSpells = new SpellList($conditions);
             if (!$ubSpells->error)
             {
@@ -763,7 +759,7 @@ class SpellPage extends GenericPage
             {
                 $foo = $this->subject->relItems->getListviewData();
 
-                for ($i = 1; $i < 4; $i++)
+                for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
                 {
                     if (($bar = $this->subject->getField('effect'.$i.'CreateItemId')) && isset($foo[$bar]))
                     {
@@ -910,12 +906,9 @@ class SpellPage extends GenericPage
 
 
         // tab: triggered by
-        $conditions = array(
-            'OR',
-            ['AND', ['OR', ['effect1Id', SpellList::EFFECTS_TRIGGER], ['effect1AuraId', SpellList::AURAS_TRIGGER]], ['effect1TriggerSpell', $this->subject->id]],
-            ['AND', ['OR', ['effect2Id', SpellList::EFFECTS_TRIGGER], ['effect2AuraId', SpellList::AURAS_TRIGGER]], ['effect2TriggerSpell', $this->subject->id]],
-            ['AND', ['OR', ['effect3Id', SpellList::EFFECTS_TRIGGER], ['effect3AuraId', SpellList::AURAS_TRIGGER]], ['effect3TriggerSpell', $this->subject->id]],
-        );
+        $conditions = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $conditions[] = ['AND', ['OR', ['effect'.$i.'Id', SpellList::EFFECTS_TRIGGER], ['effect'.$i.'AuraId', SpellList::AURAS_TRIGGER]], ['effect'.$i.'TriggerSpell', $this->subject->id]];
 
         $trigger = new SpellList($conditions);
         if (!$trigger->error)
@@ -1146,12 +1139,9 @@ class SpellPage extends GenericPage
         }
 
         // tab: taught by spell
-        $conditions = array(
-            'OR',
-            ['AND', ['effect1Id', SpellList::EFFECTS_TEACH], ['effect1TriggerSpell', $this->subject->id]],
-            ['AND', ['effect2Id', SpellList::EFFECTS_TEACH], ['effect2TriggerSpell', $this->subject->id]],
-            ['AND', ['effect3Id', SpellList::EFFECTS_TEACH], ['effect3TriggerSpell', $this->subject->id]],
-        );
+        $conditions = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $conditions[] = ['AND', ['effect'.$i.'Id', SpellList::EFFECTS_TEACH], ['effect'.$i.'TriggerSpell', $this->subject->id]];
 
         $tbSpell = new SpellList($conditions);
         $tbsData = [];
@@ -1233,7 +1223,7 @@ class SpellPage extends GenericPage
         // tab: sounds
         $data     = [];
         $seSounds = [];
-        for ($i = 1; $i < 4; $i++)                          // sounds from screen effect
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // sounds from screen effect; EQWOW - MergedWorlds extended-effects
             if ($this->subject->getField('effect'.$i.'AuraId') == SPELL_AURA_SCREEN_EFFECT)
                $seSounds = DB::Aowow()->selectRow('SELECT `ambienceDay`, `ambienceNight`, `musicDay`, `musicNight` FROM ?_screeneffect_sounds WHERE `id` = ?d', $this->subject->getField('effect'.$i.'MiscValue'));
 
@@ -1476,7 +1466,7 @@ class SpellPage extends GenericPage
         $pMask   = $this->subject->periodicEffectsMask();
         $allDoTs = true;
 
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
         {
             if (!$this->subject->getField('effect'.$i.'Id'))
                 continue;
@@ -1549,7 +1539,7 @@ class SpellPage extends GenericPage
             $castingTime = $this->subject->getCastingTimeForBonus($isDOT);
 
             // 50% for damage and healing spells for leech spells from damage bonus and 0% from healing
-            for ($j = 1; $j < 4; ++$j)
+            for ($j = 1; $j <= MAX_SPELL_EFFECTS; ++$j)          // EQWOW - MergedWorlds extended-effects
             {
                 if ($this->subject->getField('effectId'.$j) == SPELL_EFFECT_HEALTH_LEECH || $this->subject->getField('effect'.$j.'AuraId') == SPELL_AURA_PERIODIC_LEECH)
                 {
@@ -1643,7 +1633,7 @@ class SpellPage extends GenericPage
         $perfItem = DB::World()->selectRow('SELECT `perfectItemType` AS `itemId`, `requiredSpecialization` AS `reqSpellId`, `perfectCreateChance` AS `chance` FROM skill_perfect_item_template WHERE `spellId` = ?d', $this->typeId);
 
         // Iterate through all effects:
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
         {
             if ($this->subject->getField('effect'.$i.'Id') <= 0)
                 continue;
@@ -2249,7 +2239,14 @@ class SpellPage extends GenericPage
                 if ($_footer['value'][0] != $_footer['value'][1])
                     $buffer .= Lang::game('valueDelim').sprintf($valueFmt, $_footer['value'][1]);
                 if ($effRPPL != 0)
+                {
                     $buffer .= sprintf(Lang::spell('costPerLevel'), sprintf($valueFmt, $effRPPL));
+
+                    // EQWOW - MergedWorlds extended-effects: an effect can stop scaling at its own level (255 = no cap)
+                    $effMaxLvl = $this->subject->getField('effect'.$i.'MaxLevel') ?: $this->subject->getField('maxLevel');
+                    if ($effMaxLvl > 0 && $effMaxLvl < 255)
+                        $buffer .= Lang::spell('effMaxLevel', [$effMaxLvl]);
+                }
                 if ($effPPCP != 0)
                     $buffer .= sprintf(Lang::spell('pointsPerCP'), sprintf($valueFmt, $effPPCP));
                 if (isset($_footer['value'][2]))

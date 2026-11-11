@@ -19,8 +19,22 @@ CLISetup::registerSetup("sql", new class extends SetupScript
     protected $worldDependency = ['item_template', 'creature_template', 'creature_template_addon', 'creature_template_spell', 'smart_scripts', 'trainer_spell', 'disables', 'spell_ranks', 'spell_dbc', 'skill_discovery_template'];
     protected $setupAfter      = [['icons', 'spellrange'], []]; // spellrange required to use SpellList
 
+    // EQWOW - MergedWorlds extended-effects: SpellExtendedEffects.dbc fields copied 1:1 into ?_spell for effects 4-12 (both use the same names)
+    private const EXTENDED_EFFECT_FIELDS = ['Id', 'DieSides', 'RealPointsPerLevel', 'BasePoints', 'Mechanic', 'ImplicitTargetA', 'ImplicitTargetB', 'AuraId', 'Periode',
+        'ValueMultiplier', 'ChainTarget', 'MiscValue', 'MiscValueB', 'TriggerSpell', 'PointsPerComboPoint', 'SpellClassMaskA', 'SpellClassMaskB', 'SpellClassMaskC',
+        'DamageMultiplier', 'BonusMultiplier'];
+
+    // EQWOW - MergedWorlds extended-effects: the columns that follow trainingCost in ?_spell (effects 4-12, then effect1-12MaxLevel), filled
+    // after the base copy by applyExtendedEffects(). 23 per effect, as for effects 1-3
+    private const EXTENDED_COLUMN_COUNT  = (MAX_SPELL_EFFECTS - MAX_SPELL_EFFECTS_DBC) * 23 + MAX_SPELL_EFFECTS;
+
     public function generate(array $ids = []) : bool
     {
+        // EQWOW - MergedWorlds extended-effects: zero the extended columns (each needs its own alias, the rows are read as assoc arrays)
+        $extPad  = '';
+        for ($i = 1; $i <= self::EXTENDED_COLUMN_COUNT; $i++)
+            $extPad .= ', 0 AS extPad'.$i;
+
         $ssQuery = 'SELECT
                            id,
                            0 AS category,
@@ -111,7 +125,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                            0 AS skillLevelYellow,
                            schoolMask,
                            0 AS spellDescriptionVariable,
-                           0 AS trainingCost
+                           0 AS trainingCost'.$extPad.'
                     FROM   spell_dbc
                     WHERE  id > ?d                          -- EQWOW - keyset pagination instead of quadratic LIMIT offset
                     ORDER  BY id
@@ -197,7 +211,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
                               0 AS skillLevelYellow,
                               schoolMask,
                               GREATEST(spellDescriptionVariable, 0),
-                              0 AS trainingCost
+                              0 AS trainingCost'.$extPad.'
                     FROM      dbc_spell s
                     LEFT JOIN dbc_spellcasttimes sct ON s.castTimeId      = sct.id
                     LEFT JOIN dbc_spellrunecost  src ON s.runeCostId      = src.id
@@ -250,6 +264,9 @@ CLISetup::registerSetup("sql", new class extends SetupScript
             // EQWOW - one multi-row insert per batch instead of per-row queries
             DB::Aowow()->query('INSERT IGNORE INTO ?_spell VALUES (?a)', array_map('array_values', array_values($spells)));
         }
+
+        // EQWOW - MergedWorlds extended-effects
+        $this->applyExtendedEffects();
 
         // apply flag: CUSTOM_DISABLED [0xD: players (0x1), pets (0x4), general (0x8); only generally disabled spells]
         if ($disables = DB::World()->selectCol('SELECT `entry` FROM disables WHERE `sourceType` = 0 AND `params_0` = "" AND `params_1` = "" AND `flags` & 0xD'))
@@ -504,11 +521,14 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         DB::Aowow()->query('UPDATE ?_spell SET `reqClassMask` = ?d WHERE `id`         = ?d', ChrClass::MAGE->value,  30449); // Mage - Spellsteal
 
         // triggered by spell
+        // EQWOW - MergedWorlds extended-effects: all 12 effects
+        $triggered = [];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)
+            $triggered[] = 'SELECT effect'.$i.'TriggerSpell as id FROM ?_spell WHERE effect'.$i.'Id NOT IN (36, 57, 133) AND effect'.$i.'TriggerSpell <> 0';
+
         DB::Aowow()->query(
            'UPDATE ?_spell a
-            JOIN   ( SELECT effect1TriggerSpell as id FROM ?_spell WHERE effect1Id NOT IN (36, 57, 133) AND effect1TriggerSpell <> 0 UNION
-                     SELECT effect2TriggerSpell as id FROM ?_spell WHERE effect2Id NOT IN (36, 57, 133) AND effect2TriggerSpell <> 0 UNION
-                     SELECT effect3TriggerSpell as id FROM ?_spell WHERE effect3Id NOT IN (36, 57, 133) AND effect3TriggerSpell <> 0  ) as b
+            JOIN   ( '.implode(' UNION ', $triggered).' ) as b
             SET    cuFlags = cuFlags | ?d
             WHERE  a.id = b.id',
         SPELL_CU_TRIGGERED);
@@ -811,6 +831,40 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         $this->reapplyCCFlags('spell', Type::SPELL);
 
         return true;
+    }
+
+    // EQWOW - MergedWorlds extended-effects: effects 4-12 and the per effect level caps (0 = the spell's maxLevel) come from the optional
+    // SpellExtendedEffects.dbc (row id = spell id). Without the file every spell keeps Spell.dbc's three effects, like the server does
+    private function applyExtendedEffects() : void
+    {
+        CLI::write('[spell] - merging spellextendedeffects.dbc into aowow_spell');
+
+        if (!CLISetup::loadDBC('spellextendedeffects'))
+        {
+            CLI::write('[spell] - no SpellExtendedEffects.dbc - spells keep effects 1-3 only', CLI::LOG_WARN);
+            return;
+        }
+
+        $set   = [];
+        $joins = [];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)
+            $set[] = 's.`effect'.$i.'MaxLevel` = e.`effect'.$i.'MaxLevel`';
+
+        for ($i = MAX_SPELL_EFFECTS_DBC + 1; $i <= MAX_SPELL_EFFECTS; $i++)
+        {
+            foreach (self::EXTENDED_EFFECT_FIELDS as $field)
+                $set[] = 's.`effect'.$i.$field.'` = e.`effect'.$i.$field.'`';
+
+            $set[]   = 's.`effect'.$i.'CreateItemId` = GREATEST(e.`effect'.$i.'CreateItemId`, 0)';
+            $set[]   = 's.`effect'.$i.'RadiusMin` = IFNULL(sr'.$i.'.`radiusMin`, 0)';
+            $set[]   = 's.`effect'.$i.'RadiusMax` = IFNULL(sr'.$i.'.`radiusMax`, 0)';
+            $joins[] = 'LEFT JOIN dbc_spellradius sr'.$i.' ON sr'.$i.'.`id` = e.`effect'.$i.'RadiusId`';
+        }
+
+        DB::Aowow()->query('UPDATE ?_spell s JOIN dbc_spellextendedeffects e ON e.`id` = s.`id` '.implode(' ', $joins).' SET '.implode(', ', $set));
+
+        $nEffects = DB::Aowow()->selectCell('SELECT COUNT(*) FROM ?_spell WHERE `effect4Id` <> 0');
+        CLI::write('[spell] - '.$nEffects.' spells with more than '.MAX_SPELL_EFFECTS_DBC.' effects', CLI::LOG_BLANK);
     }
 });
 

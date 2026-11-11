@@ -410,12 +410,15 @@ class StatsContainer
         // this probably does not affect enchantments
         $tmpStore = [];
 
-        for ($i = 1; $i <= 3; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)         // EQWOW - MergedWorlds extended-effects
         {
-            $eff  = $spell['effect'.$i.'Id'];
-            $aura = $spell['effect'.$i.'AuraId'];
-            $mVal = $spell['effect'.$i.'MiscValue'];
-            $amt  = $spell['effect'.$i.'BasePoints'] + $spell['effect'.$i.'DieSides'];
+            $eff  = $spell['effect'.$i.'Id'] ?? 0;
+            $aura = $spell['effect'.$i.'AuraId'] ?? 0;
+            $mVal = $spell['effect'.$i.'MiscValue'] ?? 0;
+            $amt  = ($spell['effect'.$i.'BasePoints'] ?? 0) + ($spell['effect'.$i.'DieSides'] ?? 0);
+
+            if (!$eff && !$aura)                            // EQWOW - unused effect slot
+                continue;
 
             if (in_array($eff, SpellList::EFFECTS_ENCHANTMENT) && ($relE = $this->relE($mVal)))
                 $this->fromEnchantment($relE);

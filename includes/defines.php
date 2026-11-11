@@ -361,6 +361,11 @@ define('MAX_LEVEL',                         80);
 define('MAX_SKILL',                         450);
 define('WOW_BUILD',                         12340);
 
+// EQWOW - MergedWorlds extended-effects: a spell carries up to 12 effects. Spell.dbc holds effects 1-3 and the optional
+// SpellExtendedEffects.dbc holds 4-12 (plus a per effect level cap), all stored in ?_spell as effect1* .. effect12*
+define('MAX_SPELL_EFFECTS',                 12);
+define('MAX_SPELL_EFFECTS_DBC',             3);
+
 // Loot handles
 define('LOOT_FISHING',            'fishing_loot_template');
 define('LOOT_CREATURE',          'creature_loot_template');

@@ -192,6 +192,16 @@ class SpellList extends BaseType
 
         return '';
     }
+
+    // EQWOW - MergedWorlds extended-effects: condition that matches if any of the spell's 12 effects has effect<N><field> <op> $value
+    public static function anyEffect(string $field, $value, ?string $op = null, string $prefix = '') : array
+    {
+        $cnd = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)
+            $cnd[] = $op === null ? [$prefix.'effect'.$i.$field, $value] : [$prefix.'effect'.$i.$field, $value, $op];
+
+        return $cnd;
+    }
     // end static use
 
     // required for item-comparison
@@ -299,7 +309,7 @@ class SpellList extends BaseType
                 continue;
             }
 
-            for ($i = 1; $i < 4; $i++)
+            for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             {
                 $pts      = $this->calculateAmountForCurrent($i)[1];
                 $mv       = $this->getField('effect'.$i.'MiscValue');
@@ -495,7 +505,7 @@ class SpellList extends BaseType
             if ($spellId && $spellId != $id)
                 continue;
 
-            for ($i = 1; $i < 4; $i++)
+            for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             {
                 if ($spellId && $effIdx && $effIdx != $i)
                     continue;
@@ -705,7 +715,7 @@ class SpellList extends BaseType
         $rppl    = $this->getField('effect'.$effIdx.'RealPointsPerLevel');
         $base    = $this->getField('effect'.$effIdx.'BasePoints');
         $add     = $this->getField('effect'.$effIdx.'DieSides');
-        $maxLvl  = $this->getField('maxLevel');
+        $maxLvl  = $this->getField('effect'.$effIdx.'MaxLevel') ?: $this->getField('maxLevel');   // EQWOW - MergedWorlds extended-effects: per effect level cap
         $baseLvl = $this->getField('baseLevel');
 
         if ($rppl)
@@ -736,7 +746,7 @@ class SpellList extends BaseType
     public function canCreateItem() : array
     {
         $idx = [];
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if (in_array($this->curTpl['effect'.$i.'Id'], SpellList::EFFECTS_ITEM_CREATE) || in_array($this->curTpl['effect'.$i.'AuraId'], SpellList::AURAS_ITEM_CREATE))
                 if ($this->curTpl['effect'.$i.'CreateItemId'] > 0)
                     $idx[] = $i;
@@ -747,7 +757,7 @@ class SpellList extends BaseType
     public function canTriggerSpell() : array
     {
         $idx = [];
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if (in_array($this->curTpl['effect'.$i.'Id'], SpellList::EFFECTS_TRIGGER) || in_array($this->curTpl['effect'.$i.'AuraId'], SpellList::AURAS_TRIGGER))
                 if ($this->curTpl['effect'.$i.'AuraId'] == SPELL_AURA_DUMMY || $this->curTpl['effect'.$i.'TriggerSpell'] > 0 || ($this->curTpl['effect'.$i.'Id'] == SPELL_EFFECT_TITAN_GRIP && $this->curTpl['effect'.$i.'MiscValue'] > 0))
                     $idx[] = $i;
@@ -758,7 +768,7 @@ class SpellList extends BaseType
     public function canTeachSpell() : array
     {
         $idx = [];
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if (in_array($this->curTpl['effect'.$i.'Id'], SpellList::EFFECTS_TEACH))
                 if ($this->curTpl['effect'.$i.'TriggerSpell'] > 0)
                     $idx[] = $i;
@@ -769,7 +779,7 @@ class SpellList extends BaseType
     public function canEnchantmentItem() : array
     {
         $idx = [];
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if (in_array($this->curTpl['effect'.$i.'Id'], SpellList::EFFECTS_ENCHANTMENT))
                 $idx[] = $i;
 
@@ -783,7 +793,7 @@ class SpellList extends BaseType
 
     public function isHealingSpell()
     {
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if (!in_array($this->curTpl['effect'.$i.'Id'], SpellList::EFFECTS_HEAL) && !in_array($this->curTpl['effect'.$i.'AuraId'], SpellList::AURAS_HEAL))
                 return false;
 
@@ -792,7 +802,7 @@ class SpellList extends BaseType
 
     public function isDamagingSpell()
     {
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if (!in_array($this->curTpl['effect'.$i.'Id'], SpellList::EFFECTS_DAMAGE) && !in_array($this->curTpl['effect'.$i.'AuraId'], SpellList::AURAS_DAMAGE))
                 return false;
 
@@ -803,7 +813,7 @@ class SpellList extends BaseType
     {
         $effMask = 0x0;
 
-        for ($i = 1; $i < 4; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
             if ($this->curTpl['effect'.$i.'Periode'] > 0)
                 $effMask |= 1 << ($i - 1);
 
@@ -2105,7 +2115,7 @@ class SpellList extends BaseType
             if ($addInfoMask & ITEMINFO_MODEL)
             {
                 // may have multiple models set, in this case i've no idea what should be picked
-                for ($i = 1; $i < 4; $i++)
+                for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
                 {
                     if (!empty($modelInfo[$this->id][$i]))
                     {
@@ -2139,7 +2149,7 @@ class SpellList extends BaseType
                     $data[Type::CHR_RACE][$rId] = $rId;
 
                 // play sound effect
-                for ($i = 1; $i < 4; $i++)
+                for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
                     if ($this->getField('effect'.$i.'Id') == SPELL_EFFECT_PLAY_SOUND || $this->getField('effect'.$i.'Id') == SPELL_EFFECT_PLAY_MUSIC)
                         $data[Type::SOUND][$this->getField('effect'.$i.'MiscValue')] = $this->getField('effect'.$i.'MiscValue');
             }
@@ -2201,7 +2211,7 @@ class SpellList extends BaseType
         $isDirect = false;
         $isArea   = false;
 
-        for ($i = 1; $i <= 3; $i++)
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
         {
             if (in_array($this->curTpl['effect'.$i.'Id'], SpellLIst::EFFECTS_DIRECT_SCALING))
                 $isDirect = true;
@@ -2504,7 +2514,7 @@ class SpellListFilter extends Filter
 
         // mechanic
         if (isset($_v['me']))
-            $parts[] = ['OR', ['mechanic', $_v['me']], ['effect1Mechanic', $_v['me']], ['effect2Mechanic', $_v['me']], ['effect3Mechanic', $_v['me']]];
+            $parts[] = ['OR', ['mechanic', $_v['me']], SpellList::anyEffect('Mechanic', $_v['me'])];   // EQWOW - MergedWorlds extended-effects
 
         // EQWOW: learnable by EQ class / EQ learn level range - learn levels come from spell scrolls (?_everquest_spell_learn)
         if (isset($_v['eqc']) || isset($_v['mineql']) || isset($_v['maxeql']))
@@ -2604,7 +2614,7 @@ class SpellListFilter extends Filter
         if (!$this->checkInput(parent::V_RANGE, [1, self::MAX_SPELL_AURA], $crs))
             return null;
 
-        return ['OR', ['effect1AuraId', $crs], ['effect2AuraId', $crs], ['effect3AuraId', $crs]];
+        return SpellList::anyEffect('AuraId', $crs);           // EQWOW - MergedWorlds extended-effects
     }
 
     protected function cbEffectNames(int $cr, int $crs, string $crv) : ?array
@@ -2612,7 +2622,7 @@ class SpellListFilter extends Filter
         if (!$this->checkInput(parent::V_RANGE, [1, self::MAX_SPELL_EFFECT], $crs))
             return null;
 
-        return ['OR', ['effect1Id', $crs], ['effect2Id', $crs], ['effect3Id', $crs]];
+        return SpellList::anyEffect('Id', $crs);               // EQWOW - MergedWorlds extended-effects
     }
 
     protected function cbInverseFlag(int $cr, int $crs, string $crv, string $field, int $flag) : ?array

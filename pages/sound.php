@@ -130,23 +130,21 @@ class SoundPage extends GenericPage
             $this->typeId, $this->typeId, $this->typeId, $this->typeId
         );
 
-        $cnd = array(
-            'OR',
-            ['AND', ['effect1Id', 132], ['effect1MiscValue', $this->typeId]],
-            ['AND', ['effect2Id', 132], ['effect2MiscValue', $this->typeId]],
-            ['AND', ['effect3Id', 132], ['effect3MiscValue', $this->typeId]]
-        );
+        $cnd = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $cnd[] = ['AND', ['effect'.$i.'Id', 132], ['effect'.$i.'MiscValue', $this->typeId]];
 
         if ($displayIds)
             $cnd[] = ['spellVisualId', $displayIds];
 
         if ($seMiscValues)
-            $cnd[] = array(
-                'OR',
-                ['AND', ['effect1AuraId', 260], ['effect1MiscValue', $seMiscValues]],
-                ['AND', ['effect2AuraId', 260], ['effect2MiscValue', $seMiscValues]],
-                ['AND', ['effect3AuraId', 260], ['effect3MiscValue', $seMiscValues]]
-            );
+        {
+            $seCnd = ['OR'];
+            for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)      // EQWOW - MergedWorlds extended-effects
+                $seCnd[] = ['AND', ['effect'.$i.'AuraId', 260], ['effect'.$i.'MiscValue', $seMiscValues]];
+
+            $cnd[] = $seCnd;
+        }
 
         $spells = new SpellList($cnd);
         if (!$spells->error)

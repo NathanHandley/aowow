@@ -1145,12 +1145,9 @@ class ItemPage extends genericPage
             }
 
             // reagents
-            $cnd = array(
-                'OR',
-                ['AND', ['effect1CreateItemId', $this->typeId], ['OR', ['effect1Id', SpellList::EFFECTS_ITEM_CREATE], ['effect1AuraId', SpellList::AURAS_ITEM_CREATE]]],
-                ['AND', ['effect2CreateItemId', $this->typeId], ['OR', ['effect2Id', SpellList::EFFECTS_ITEM_CREATE], ['effect2AuraId', SpellList::AURAS_ITEM_CREATE]]],
-                ['AND', ['effect3CreateItemId', $this->typeId], ['OR', ['effect3Id', SpellList::EFFECTS_ITEM_CREATE], ['effect3AuraId', SpellList::AURAS_ITEM_CREATE]]],
-            );
+            $cnd = ['OR'];
+            for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+                $cnd[] = ['AND', ['effect'.$i.'CreateItemId', $this->typeId], ['OR', ['effect'.$i.'Id', SpellList::EFFECTS_ITEM_CREATE], ['effect'.$i.'AuraId', SpellList::AURAS_ITEM_CREATE]]];
 
             $spellSource = new SpellList($cnd);
             if (!$spellSource->error)

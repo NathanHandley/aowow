@@ -1655,6 +1655,7 @@ $lang = array(
         'costPerSec'    => ", plus %s per sec",             // see 'powerTypes'
         'costPerLevel'  => ", plus %s per level",           // not used?
         'pointsPerCP'   => ", plus %s per combo point",
+        'effMaxLevel'   => " (up to level %d)",             // EQWOW - MergedWorlds extended-effects: per effect scaling cap
         'stackGroup'    => "Stack Group",
         'linkedWith'    => "Linked with",
         '_scaling'      => "Scaling",

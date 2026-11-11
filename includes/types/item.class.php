@@ -1379,10 +1379,14 @@ class ItemList extends BaseType
             if ($this->curTpl['spellTrigger'.$h] != SPELL_TRIGGER_USE)
                 continue;
 
+            // EQWOW - MergedWorlds extended-effects: all 12 effects
+            $fields = [];
+            for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)
+                array_push($fields, 'effect'.$i.'Id', 'effect'.$i.'AuraId', 'effect'.$i.'MiscValue', 'effect'.$i.'BasePoints', 'effect'.$i.'DieSides');
+
             if ($spell = DB::Aowow()->selectRow(
-               'SELECT effect1AuraId, effect1MiscValue, effect1BasePoints, effect1DieSides, effect2AuraId, effect2MiscValue, effect2BasePoints, effect2DieSides, effect3AuraId, effect3MiscValue, effect3BasePoints, effect3DieSides
-                FROM ?_spell
-                WHERE id = ?d',
+               'SELECT ?# FROM ?_spell WHERE id = ?d',
+                $fields,
                 $this->curTpl['spellId'.$h]))
                 $onUseStats->fromSpell($spell);
         }

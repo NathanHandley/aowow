@@ -310,12 +310,9 @@ class ObjectPage extends GenericPage
         /**************/
 
         // tab: summoned by
-        $conditions = array(
-            'OR',
-            ['AND', ['effect1Id', [50, 76, 104, 105, 106, 107]], ['effect1MiscValue', $this->typeId]],
-            ['AND', ['effect2Id', [50, 76, 104, 105, 106, 107]], ['effect2MiscValue', $this->typeId]],
-            ['AND', ['effect3Id', [50, 76, 104, 105, 106, 107]], ['effect3MiscValue', $this->typeId]]
-        );
+        $conditions = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $conditions[] = ['AND', ['effect'.$i.'Id', [50, 76, 104, 105, 106, 107]], ['effect'.$i.'MiscValue', $this->typeId]];
 
         $summons = new SpellList($conditions);
         if (!$summons->error)

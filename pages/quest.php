@@ -727,7 +727,7 @@ class QuestPage extends GenericPage
                 }
             }
             // complete-spell
-            else if ($endSpell = new SpellList(array('OR', ['AND', ['effect1Id', 16], ['effect1MiscValue', $this->typeId]], ['AND', ['effect2Id', 16], ['effect2MiscValue', $this->typeId]], ['AND', ['effect3Id', 16], ['effect3MiscValue', $this->typeId]])))
+            else if ($endSpell = new SpellList(self::questCompleteSpellCondition($this->typeId)))   // EQWOW - MergedWorlds extended-effects
                 if (!$endSpell->error)
                     $endTextWrapper = '<a href="?spell='.$endSpell->id.'">%s</a>';
         }
@@ -1054,6 +1054,16 @@ class QuestPage extends GenericPage
         }
 
         return sprintf($this->powerTpl, $this->typeId, Lang::getLocale()->value, Util::toJSON($power, JSON_AOWOW_POWER));
+    }
+
+    // EQWOW - MergedWorlds extended-effects: spells with SPELL_EFFECT_QUEST_COMPLETE (16) for this quest in any of their 12 effects
+    private static function questCompleteSpellCondition(int $questId) : array
+    {
+        $cnd = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)
+            $cnd[] = ['AND', ['effect'.$i.'Id', 16], ['effect'.$i.'MiscValue', $questId]];
+
+        return $cnd;
     }
 
     private function createRewards($side)

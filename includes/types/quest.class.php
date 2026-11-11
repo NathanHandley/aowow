@@ -670,7 +670,7 @@ class QuestListFilter extends Filter
             return null;
 
         if ($crs)
-            return ['OR', ['sourceSpellId', 0, '>'], ['rewardSpell', 0, '>'], ['rsc.effect1Id', SpellList::EFFECTS_TEACH], ['rsc.effect2Id', SpellList::EFFECTS_TEACH], ['rsc.effect3Id', SpellList::EFFECTS_TEACH]];
+            return ['OR', ['sourceSpellId', 0, '>'], ['rewardSpell', 0, '>'], SpellList::anyEffect('Id', SpellList::EFFECTS_TEACH, null, 'rsc.')];   // EQWOW - MergedWorlds extended-effects
         else
             return ['AND', ['sourceSpellId', 0], ['rewardSpell', 0], ['rewardSpellCast', 0]];
     }

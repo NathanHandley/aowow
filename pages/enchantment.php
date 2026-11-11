@@ -206,12 +206,9 @@ class EnchantmentPage extends GenericPage
 
         // used by spell
         // used by useItem
-        $cnd = array(
-            'OR',
-            ['AND', ['effect1Id', [53, 54, 156, 92]], ['effect1MiscValue', $this->typeId]],
-            ['AND', ['effect2Id', [53, 54, 156, 92]], ['effect2MiscValue', $this->typeId]],
-            ['AND', ['effect3Id', [53, 54, 156, 92]], ['effect3MiscValue', $this->typeId]],
-        );
+        $cnd = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $cnd[] = ['AND', ['effect'.$i.'Id', [53, 54, 156, 92]], ['effect'.$i.'MiscValue', $this->typeId]];
         $spellList = new SpellList($cnd);
         if (!$spellList->error)
         {
@@ -246,7 +243,7 @@ class EnchantmentPage extends GenericPage
                 foreach ($spellList->iterate() as $sId => $__)
                 {
                     // if Perm. Enchantment has a createItem its a Scroll of Enchantment (display both)
-                    for ($i = 1; $i < 4; $i++)
+                    for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)  // EQWOW - MergedWorlds extended-effects
                         if ($spellList->getField('effect'.$i.'Id') == 53 && $spellList->getField('effect'.$i.'CreateItemId'))
                             continue 2;
 

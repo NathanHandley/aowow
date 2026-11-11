@@ -603,12 +603,9 @@ class Loot
                     }
                     continue 2;
                 case LOOT_SPELL:
-                    $conditions = array(
-                        'OR',
-                        ['AND', ['effect1CreateItemId', $this->entry], ['OR', ['effect1Id', SpellList::EFFECTS_ITEM_CREATE], ['effect1AuraId', SpellList::AURAS_ITEM_CREATE]]],
-                        ['AND', ['effect2CreateItemId', $this->entry], ['OR', ['effect2Id', SpellList::EFFECTS_ITEM_CREATE], ['effect2AuraId', SpellList::AURAS_ITEM_CREATE]]],
-                        ['AND', ['effect3CreateItemId', $this->entry], ['OR', ['effect3Id', SpellList::EFFECTS_ITEM_CREATE], ['effect3AuraId', SpellList::AURAS_ITEM_CREATE]]],
-                    );
+                    $conditions = ['OR'];
+                    for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)    // EQWOW - MergedWorlds extended-effects
+                        $conditions[] = ['AND', ['effect'.$i.'CreateItemId', $this->entry], ['OR', ['effect'.$i.'Id', SpellList::EFFECTS_ITEM_CREATE], ['effect'.$i.'AuraId', SpellList::AURAS_ITEM_CREATE]]];
                     if ($ids)
                         $conditions[] = ['id', $ids];
 

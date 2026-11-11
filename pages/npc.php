@@ -691,12 +691,9 @@ class NpcPage extends GenericPage
         }
 
         // tab: summoned by [spell]
-        $conditions = array(
-            'OR',
-            ['AND', ['effect1Id', [SPELL_EFFECT_SUMMON, SPELL_EFFECT_SUMMON_PET, SPELL_EFFECT_SUMMON_DEMON]], ['effect1MiscValue', $this->typeId]],
-            ['AND', ['effect2Id', [SPELL_EFFECT_SUMMON, SPELL_EFFECT_SUMMON_PET, SPELL_EFFECT_SUMMON_DEMON]], ['effect2MiscValue', $this->typeId]],
-            ['AND', ['effect3Id', [SPELL_EFFECT_SUMMON, SPELL_EFFECT_SUMMON_PET, SPELL_EFFECT_SUMMON_DEMON]], ['effect3MiscValue', $this->typeId]]
-        );
+        $conditions = ['OR'];
+        for ($i = 1; $i <= MAX_SPELL_EFFECTS; $i++)          // EQWOW - MergedWorlds extended-effects
+            $conditions[] = ['AND', ['effect'.$i.'Id', [SPELL_EFFECT_SUMMON, SPELL_EFFECT_SUMMON_PET, SPELL_EFFECT_SUMMON_DEMON]], ['effect'.$i.'MiscValue', $this->typeId]];
 
         $sbSpell = new SpellList($conditions);
         if (!$sbSpell->error)

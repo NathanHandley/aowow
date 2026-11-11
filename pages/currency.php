@@ -166,7 +166,7 @@ class CurrencyPage extends GenericPage
         // tab: created by (spell) [for items its handled in Loot::getByContainer()]
         if ($this->typeId == 104)
         {
-            $createdBy = new SpellList(array(['effect1Id', 45], ['effect2Id', 45], ['effect3Id', 45], 'OR'));
+            $createdBy = new SpellList(SpellList::anyEffect('Id', 45));   // EQWOW - MergedWorlds extended-effects
             if (!$createdBy->error)
             {
                 $this->extendGlobalData($createdBy->getJSGlobals(GLOBALINFO_SELF | GLOBALINFO_RELATED));
