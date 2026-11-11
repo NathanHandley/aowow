@@ -297,7 +297,7 @@ class CreatureListFilter extends Filter
          6 => [parent::CR_ENUM,     's.areaId',          false,                     true       ], // foundin
          7 => [parent::CR_CALLBACK, 'cbQuestRelation',   'startsQuests',            0x1        ], // startsquest [enum]
          8 => [parent::CR_CALLBACK, 'cbQuestRelation',   'endsQuests',              0x2        ], // endsquest [enum]
-         9 => [parent::CR_BOOLEAN,  'lootId',                                                  ], // lootable
+         9 => [parent::CR_CALLBACK, 'cbLootable',        null,                      null       ], // lootable [yn] (ROWOW: RO monsters drop by mob_db)
         10 => [parent::CR_CALLBACK, 'cbRegularSkinLoot', NPC_TYPEFLAG_SPECIALLOOT              ], // skinnable [yn]
         11 => [parent::CR_BOOLEAN,  'pickpocketLootId',                                        ], // pickpocketable
         12 => [parent::CR_CALLBACK, 'cbMoneyDrop',       null,                      null       ], // averagemoneydropped [op] [int]
@@ -493,6 +493,19 @@ class CreatureListFilter extends Filter
             return ['AND', ['skinLootId', 0, '>'], ['typeFlags', $typeFlag, '&']];
         else
             return ['OR', ['skinLootId', 0], [['typeFlags', $typeFlag, '&'], 0]];
+    }
+
+    // ROWOW - a loot template, or an RO monster with drops (mod-rowow rolls mob_db's, Ragnarok::mobDrops)
+    protected function cbLootable(int $cr, int $crs, string $crv) : ?array
+    {
+        if (!$this->int2Bool($crs))
+            return null;
+
+        $ro = Ragnarok::creaturesWithDrops();
+        if ($crs)
+            return $ro ? ['OR', ['lootId', 0, '>'], ['id', $ro]] : ['lootId', 0, '>'];
+        else
+            return $ro ? ['AND', ['lootId', 0], ['id', $ro, '!']] : ['lootId', 0];
     }
 
     protected function cbRegularSkinLoot(int $cr, int $crs, string $crv, $typeFlag) : ?array

@@ -937,6 +937,69 @@ class NpcPage extends GenericPage
             }
         }
 
+        // ROWOW begin - a Ragnarok Online monster has no loot template: mod-rowow rolls mob_db's drops and MVP reward (Ragnarok::mobDrops)
+        if ($roDrops = Ragnarok::creatureDrops($this->typeId))
+        {
+            $roItems = new ItemList(array(['i.id', array_values(array_unique(array_column(array_merge($roDrops['drops'], $roDrops['mvp']), 'item')))], Cfg::get('SQL_LIMIT_NONE')));
+            if (!$roItems->error)
+            {
+                $this->extendGlobalData($roItems->getJSGlobals(GLOBALINFO_SELF | GLOBALINFO_RELATED));
+                $roLvData = $roItems->getListviewData();
+                $hasDrops = in_array('drops', array_column(array_column($this->lvTabs, 1), 'id'));
+                $roTabs   = array(
+                    'drops' => [$hasDrops ? 'Ragnarok drops' : '$LANG.tab_drops', $hasDrops ? 'drops-ro' : 'drops',
+                                'Ragnarok Online drops: each item rolls on its own when the monster dies. '.Ragnarok::dropRateNote()],
+                    'mvp'   => ['MVP reward', 'mvp-reward',
+                                'Given to the MVP only, and only one item'.(Ragnarok::dropConfig()['item_drop_mvp_mode'] == 2 ? ' each roll' : ': the chance shown is the chance to receive that one').'. '.Ragnarok::dropRateNote()]
+                );
+
+                foreach ($roTabs as $kind => [$tabName, $tabId, $note])
+                {
+                    $rows = [];
+                    foreach ($roDrops[$kind] as $d)
+                    {
+                        if (!isset($roLvData[$d['item']]))
+                            continue;
+
+                        if (isset($rows[$d['item']]))       // the same item listed twice drops twice as often
+                            $rows[$d['item']]['percent'] += $d['percent'];
+                        else
+                            $rows[$d['item']] = array_merge($roLvData[$d['item']], ['percent' => $d['percent'], 'stack' => [1, 1], 'count' => 1]);
+                    }
+
+                    if (!$rows)
+                        continue;
+
+                    foreach ($rows as &$r)                  // as Loot::getByContainer: what is over 100% goes to the stack
+                    {
+                        if ($r['percent'] > 100)
+                        {
+                            while ($r['percent'] > 200)
+                            {
+                                $r['stack'][0]++;
+                                $r['stack'][1]++;
+                                $r['percent'] -= 100;
+                            }
+                            $r['stack'][1]++;
+                            $r['percent'] = 100;
+                        }
+                        $r['percent'] = round($r['percent'], 3);
+                    }
+                    unset($r);
+
+                    $this->lvTabs[] = [ItemList::$brickFile, array(
+                        'data'      => array_values($rows),
+                        'name'      => $tabName,
+                        'id'        => $tabId,
+                        'extraCols' => ['$Listview.extraCols.percent'],
+                        'sort'      => ['-percent', 'name'],
+                        'note'      => $note
+                    )];
+                }
+            }
+        }
+        // ROWOW end
+
         // tab: starts quest
         // tab: ends quest
         $startEnd = new QuestList(array(['qse.type', Type::NPC], ['qse.typeId', $this->typeId]));

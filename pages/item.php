@@ -515,6 +515,23 @@ class ItemPage extends genericPage
             }
         }
 
+        // ROWOW begin - the Ragnarok Online monsters dropping it: mob_db's drops and MVP rewards, not a loot template (Ragnarok::mobDrops)
+        $roDroppedBy = ['drops' => [], 'mvp' => []];
+        if ($_ = Ragnarok::droppedBy($this->typeId))
+        {
+            $roNPCs = new CreatureList(array(['id', array_keys($_['drops'] + $_['mvp'])], Cfg::get('SQL_LIMIT_NONE')));
+            if (!$roNPCs->error)
+            {
+                $this->extendGlobalData($roNPCs->getJSGlobals(GLOBALINFO_SELF));
+                $npcLvData = $roNPCs->getListviewData();
+                foreach (['drops', 'mvp'] as $kind)
+                    foreach ($_[$kind] as $npcId => $pct)
+                        if (isset($npcLvData[$npcId]))
+                            $roDroppedBy[$kind][] = array_merge($npcLvData[$npcId], ['percent' => round(min($pct, 100), 3), 'stack' => [1, 1], 'count' => 1]);
+            }
+        }
+        // ROWOW end
+
         // tabs: this item is contained in..
         $lootTabs  = new Loot();
         $createdBy = [];
@@ -524,6 +541,14 @@ class ItemPage extends genericPage
 
             foreach ($lootTabs->iterate() as $idx => [$file, $tabData])
             {
+                // ROWOW - the RO monsters join the WoW creatures in "Dropped by"
+                if ($idx == 4 && $roDroppedBy['drops'])
+                {
+                    $tabData['data']      = array_merge($tabData['data'], $roDroppedBy['drops']);
+                    $tabData['extraCols'] = array_values(array_unique(array_merge($tabData['extraCols'] ?? [], ['$Listview.extraCols.percent'])));
+                    $tabData['note']      = 'Ragnarok Online monsters: '.Ragnarok::dropRateNote();
+                }
+
                 if (!$tabData['data'])
                     continue;
 
@@ -550,6 +575,17 @@ class ItemPage extends genericPage
                 $this->lvTabs[] = [$file, $tabData];
             }
         }
+
+        // ROWOW - MVP reward of RO monsters
+        if ($roDroppedBy['mvp'])
+            $this->lvTabs[] = [CreatureList::$brickFile, array(
+                'data'      => $roDroppedBy['mvp'],
+                'name'      => 'MVP reward from',
+                'id'        => 'mvp-reward-from',
+                'extraCols' => ['$Listview.extraCols.percent'],
+                'sort'      => ['-percent', 'name'],
+                'note'      => 'Given to the MVP only, one item of the monster\'s MVP reward: the chance shown is the chance it is this one. '.Ragnarok::dropRateNote()
+            )];
 
         // tabs: this item contains..
         $sourceFor = array(

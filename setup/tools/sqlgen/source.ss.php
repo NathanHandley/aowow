@@ -14,7 +14,7 @@ CLISetup::registerSetup("sql", new class extends SetupScript
     );
 
     protected $dbcSourceFiles  = ['charstartoutfit', 'talent', 'spell', 'skilllineability', 'itemextendedcost', 'lock'];
-    protected $worldDependency    = ['playercreateinfo_skills', 'playercreateinfo_item', 'skill_discovery_template', 'achievement_reward', 'skill_perfect_item_template', 'item_template', 'gameobject_template', 'quest_template', 'quest_template_addon', 'creature_template', 'creature', 'creature_default_trainer', 'trainer_spell', 'npc_vendor', 'game_event_npc_vendor', 'reference_loot_template', 'item_loot_template', 'creature_loot_template', 'gameobject_loot_template', 'mail_loot_template', 'disenchant_loot_template', 'fishing_loot_template', 'skinning_loot_template', 'milling_loot_template', 'prospecting_loot_template', 'pickpocketing_loot_template'];
+    protected $worldDependency    = ['playercreateinfo_skills', 'playercreateinfo_item', 'skill_discovery_template', 'achievement_reward', 'skill_perfect_item_template', 'item_template', 'gameobject_template', 'quest_template', 'quest_template_addon', 'creature_template', 'creature', 'creature_default_trainer', 'trainer_spell', 'npc_vendor', 'game_event_npc_vendor', 'reference_loot_template', 'item_loot_template', 'creature_loot_template', 'gameobject_loot_template', 'mail_loot_template', 'disenchant_loot_template', 'fishing_loot_template', 'skinning_loot_template', 'milling_loot_template', 'prospecting_loot_template', 'pickpocketing_loot_template', 'mod_rowow_db_mob', 'mod_rowow_creature_mob', 'mod_rowow_companion_drop'];   // ROWOW - RO monster drops
 
     protected $setupAfter      = [['spell', 'achievement', 'items', 'itemset', 'spawns', 'creature', 'zones', 'titles'], []];
 
@@ -318,6 +318,37 @@ CLISetup::registerSetup("sql", new class extends SetupScript
 
             $this->pushBuffer(Type::ITEM, $roi, SRC_DROP, $mode, $l['qty'] > 1 ? 0 : Type::NPC, $entry, $zoneId, $mMask, $l['qty']);
         }
+
+        // ROWOW begin - Ragnarok Online monsters have no loot template: mob_db's drops and MVP rewards, and the converter's companion carriers (Ragnarok::mobDrops)
+        if (($roDrops = Ragnarok::mobDrops()) && ($roCreatures = Ragnarok::creaturesOfMobs(array_keys($roDrops))))
+        {
+            CLI::write('[source] * #2  Drop [Ragnarok Online monster]', CLI::LOG_BLANK, true, true);
+
+            $roItems = [];
+            foreach ($roCreatures as $creatureId => $mobId)
+                foreach (array_merge($roDrops[$mobId]['drops'], $roDrops[$mobId]['mvp']) as $d)
+                    $roItems[$d['item']][$creatureId] = $mobId;
+
+            $itemTpls = $roItems ? DB::World()->select('SELECT `entry` AS ARRAY_KEY, `class`, `subclass`, `spellid_1`, `spelltrigger_1`, `spellid_2`, `spelltrigger_2` FROM item_template WHERE `entry` IN (?a)', array_keys($roItems)) : [];
+            $spawns   = DB::Aowow()->selectCol('SELECT `typeId` AS ARRAY_KEY, IF(COUNT(DISTINCT `areaId`) > 1, 0, `areaId`) FROM ?_spawns WHERE `type` = ?d AND `typeId` IN (?a) GROUP BY `typeId`', Type::NPC, array_keys($roCreatures));
+
+            foreach ($roItems as $itemId => $creatures)
+            {
+                if (!isset($itemTpls[$itemId]))
+                    continue;
+
+                foreach ($creatures as $creatureId => $mobId)
+                {
+                    $mMask = $roDrops[$mobId]['isMvp'] ? SRC_FLAG_BOSSDROP : 0x0;
+
+                    if ($_ = $this->taughtSpell($itemTpls[$itemId]))
+                        $this->pushBuffer(Type::SPELL, $_, SRC_DROP, 1, Type::NPC, $creatureId, $spawns[$creatureId] ?? 0, $mMask);
+
+                    $this->pushBuffer(Type::ITEM, $itemId, SRC_DROP, 1, Type::NPC, $creatureId, $spawns[$creatureId] ?? 0, $mMask);
+                }
+            }
+        }
+        // ROWOW end
 
         CLI::write('[source] * #2  Drop [Object]', CLI::LOG_BLANK, true, true);
 
