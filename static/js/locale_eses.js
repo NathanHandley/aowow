@@ -853,7 +853,7 @@ var mn_pets = [
 var mn_achievements = [
     [92,"General"],
     [96,"Misiones",,[[14861,"World of Warcraft"],[14862,"The Burning Crusade"],[14863,"Wrath of the Lich King"]]],
-    [97,"Exploración",,[[14777,"Reinos del Este"],[14778,"Kalimdor"],[14779,"Terrallende"],[14780,"Rasganorte"]]],
+    [97,"Exploración",,[[14777,"Reinos del Este"],[14778,"Kalimdor"],[14779,"Terrallende"],[14780,"Rasganorte"],[15103,"Antonica"],[15104,"Faydwer"],[15105,"Odus"],[15106,"Kunark"],[15107,"Velious"],[15108,"Luclin"]]],
     [95,"Jugador contra Jugador",,[
         [165,"Arena"],
         [14801,"Valle de Alterac"],
@@ -876,7 +876,10 @@ var mn_achievements = [
         [15001,"La Llamada (10 j.)"],
         [15002,"La Llamada (25 j.)"],
         [15041,"La Caída (10 j.)"],
-        [15042,"La Caída (25 j.)"]
+        [15042,"La Caída (25 j.)"],
+        [15100,"Antonica"],
+        [15101,"Kunark"],
+        [15102,"Velious"]
     ]],
     [169,"Profesiones",,[[170,"Cocina"],[171,"Pesca"],[172,"Primeros auxilios"]]],
     [201,"Reputación",,[[14864,"World of Warcraft"],[14865,"The Burning Crusade"],[14866,"Wrath of the Lich King"]]],
@@ -891,6 +894,9 @@ var mn_achievements = [
         [14981,"Generosidad"],
         [156,"Festival de Invierno"],
         [14941,"Torneo Argenta"]
+    ]],
+    [15110,"Other Worlds",,[
+        [15111,"Ragnarok"]
     ]],
     [81,"Proezas de fuerza"],
     [1,"Estadísticas",, [
@@ -2376,7 +2382,18 @@ var g_achievement_categories = {
     15021: 'La Llamada de la Cruzada',
     15041: 'La Caída (10 j.)',
     15042: 'La Caída (25 j.)',
-    15062: 'La caída del Rey Exánime'
+    15062: 'La caída del Rey Exánime',
+    15100: 'Antonica',
+    15101: 'Kunark',
+    15102: 'Velious',
+    15103: 'Antonica',
+    15104: 'Faydwer',
+    15105: 'Odus',
+    15106: 'Kunark',
+    15107: 'Velious',
+    15108: 'Luclin',
+    15110: 'Other Worlds',
+    15111: 'Ragnarok'
 };
 
 var g_title_categories = {

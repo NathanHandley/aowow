@@ -1188,7 +1188,14 @@ $lang = array(
             14981 => "Bienfaits du pèlerin",                                      15001 => "L'appel de la Croisade, raid à 10",
             15002 => "L'appel de la Croisade, raid à 25",                         15003 => "L'île des Conquérants",
             15021 => "L'appel de la Croisade",                                    15041 => "La chute du roi-liche, raid à 10",
-            15042 => "La chute du roi-liche, raid à 25",                          15062 => "La chute du roi-liche"
+            15042 => "La chute du roi-liche, raid à 25",                          15062 => "La chute du roi-liche",
+            // MergedWorlds: the EverQuest categories (Dungeons & Raids, Exploration) and Other Worlds
+            15100 => "Antonica",                                              15101 => "Kunark",
+            15102 => "Velious",                                               15103 => "Antonica",
+            15104 => "Faydwer",                                               15105 => "Odus",
+            15106 => "Kunark",                                                15107 => "Velious",
+            15108 => "Luclin",                                                15110 => "Other Worlds",
+            15111 => "Ragnarok"
         )
     ),
     'chrClass' => array(

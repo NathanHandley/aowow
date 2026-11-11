@@ -1188,7 +1188,14 @@ $lang = array(
             14981 => "感恩节",                                                       15001 => "北伐的召唤 - 10人团队",
             15002 => "北伐的召唤 - 25人团队",                                             15003 => "征服之岛",
             15021 => "北伐的召唤",                                                     15041 => "巫妖王的陨落 - 10人团队",
-            15042 => "巫妖王的陨落 - 25人团队",                                            15062 => "巫妖王的陨落"
+            15042 => "巫妖王的陨落 - 25人团队",                                            15062 => "巫妖王的陨落",
+            // MergedWorlds: the EverQuest categories (Dungeons & Raids, Exploration) and Other Worlds
+            15100 => "Antonica",                                              15101 => "Kunark",
+            15102 => "Velious",                                               15103 => "Antonica",
+            15104 => "Faydwer",                                               15105 => "Odus",
+            15106 => "Kunark",                                                15107 => "Velious",
+            15108 => "Luclin",                                                15110 => "Other Worlds",
+            15111 => "Ragnarok"
         )
     ),
     'chrClass' => array(

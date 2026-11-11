@@ -1090,7 +1090,13 @@ var mn_achievements = [
         [14777,"Eastern Kingdoms"],
         [14778,"Kalimdor"],
         [14779,"Outland"],
-        [14780,"Northrend"]
+        [14780,"Northrend"],
+        [15103,"Antonica"],
+        [15104,"Faydwer"],
+        [15105,"Odus"],
+        [15106,"Kunark"],
+        [15107,"Velious"],
+        [15108,"Luclin"]
     ]],
     [95,"Player vs. Player",,[
         [165,"Arena"],
@@ -1114,7 +1120,10 @@ var mn_achievements = [
         [15001,"Call of the Crusade 10-Player Raid"],
         [15002,"Call of the Crusade 25-Player Raid"],
         [15041,"Fall of the Lich King 10-Player Raid"],
-        [15042,"Fall of the Lich King 25-Player Raid"]
+        [15042,"Fall of the Lich King 25-Player Raid"],
+        [15100,"Antonica"],
+        [15101,"Kunark"],
+        [15102,"Velious"]
     ]],
     [169,"Professions",,[
         [170,"Cooking"],
@@ -1137,6 +1146,9 @@ var mn_achievements = [
         [14981,"Pilgrim's Bounty"],
         [156,"Winter Veil"],
         [14941,"Argent Tournament"]
+    ]],
+    [15110,"Other Worlds",,[
+        [15111,"Ragnarok"]
     ]],
     [81,"Feats of Strength"],
     [1,"Statistics",,[
@@ -2661,7 +2673,18 @@ var g_achievement_categories = {
     15021: 'Call of the Crusade',
     15041: 'Fall of the Lich King 10-Player Raid',
     15042: 'Fall of the Lich King 25-Player Raid',
-    15062: 'Fall of the Lich King'
+    15062: 'Fall of the Lich King',
+    15100: 'Antonica',
+    15101: 'Kunark',
+    15102: 'Velious',
+    15103: 'Antonica',
+    15104: 'Faydwer',
+    15105: 'Odus',
+    15106: 'Kunark',
+    15107: 'Velious',
+    15108: 'Luclin',
+    15110: 'Other Worlds',
+    15111: 'Ragnarok'
 };
 
 var g_title_categories = {

@@ -1188,7 +1188,14 @@ $lang = array(
             14981 => "Generosidad",                                               15001 => "La Llamada (10 j.)",
             15002 => "La Llamada (25 j.)",                                        15003 => "Isla de la Conquista",
             15021 => "La Llamada de la Cruzada",                                  15041 => "La Caída (10 j.)",
-            15042 => "La Caída (25 j.)",                                          15062 => "La caída del Rey Exánime"
+            15042 => "La Caída (25 j.)",                                          15062 => "La caída del Rey Exánime",
+            // MergedWorlds: the EverQuest categories (Dungeons & Raids, Exploration) and Other Worlds
+            15100 => "Antonica",                                              15101 => "Kunark",
+            15102 => "Velious",                                               15103 => "Antonica",
+            15104 => "Faydwer",                                               15105 => "Odus",
+            15106 => "Kunark",                                                15107 => "Velious",
+            15108 => "Luclin",                                                15110 => "Other Worlds",
+            15111 => "Ragnarok"
         )
     ),
     'chrClass' => array(

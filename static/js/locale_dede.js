@@ -853,7 +853,7 @@ var mn_pets = [
 var mn_achievements = [
     [92,"Allgemein"],
     [96,"Quests",,[[14861,"Classic"],[14862,"The Burning Crusade"],[14863,"Wrath of the Lich King"]]],
-    [97,"Erkundung",,[[14777,"Östliche Königreiche"],[14778,"Kalimdor"],[14779,"Scherbenwelt"],[14780,"Nordend"]]],
+    [97,"Erkundung",,[[14777,"Östliche Königreiche"],[14778,"Kalimdor"],[14779,"Scherbenwelt"],[14780,"Nordend"],[15103,"Antonica"],[15104,"Faydwer"],[15105,"Odus"],[15106,"Kunark"],[15107,"Velious"],[15108,"Luclin"]]],
     [95,"Spieler gegen Spieler",,[
         [165,"Arena"],
         [14801,"Alteractal"],
@@ -876,7 +876,10 @@ var mn_achievements = [
         [15001,"Der Ruf des Kreuzzugs - Schlachtzug für 10 Spieler"],
         [15002,"Der Ruf des Kreuzzugs - Schlachtzug für 25 Spieler"],
         [15041,"Der Untergang des Lichkönigs - Schlachtzug für 10 Spieler"],
-        [15042,"Der Untergang des Lichkönigs - Schlachtzug für 25 Spieler"]
+        [15042,"Der Untergang des Lichkönigs - Schlachtzug für 25 Spieler"],
+        [15100,"Antonica"],
+        [15101,"Kunark"],
+        [15102,"Velious"]
     ]],
     [169,"Berufe",,[[170,"Kochkunst"],[171,"Angeln"],[172,"Erste Hilfe"]]],
     [201,"Ruf",,[[14864,"Classic"],[14865,"The Burning Crusade"],[14866,"Wrath of the Lich King"]]],
@@ -891,6 +894,9 @@ var mn_achievements = [
         [14981,"Die Pilgerfreuden"],
         [156,"Winterhauch"],
         [14941,"Argentumturnier"]
+    ]],
+    [15110,"Other Worlds",,[
+        [15111,"Ragnarok"]
     ]],
     [81,"Heldentaten"],
     [1,"Statistiken",,[
@@ -2376,7 +2382,18 @@ var g_achievement_categories = {
     15021: 'Der Ruf des Kreuzzugs',
     15041: 'Der Untergang des Lichkönigs - Schlachtzug für 10 Spieler',
     15042: 'Der Untergang des Lichkönigs - Schlachtzug für 25 Spieler',
-    15062: 'Der Untergang des Lichkönigs'
+    15062: 'Der Untergang des Lichkönigs',
+    15100: 'Antonica',
+    15101: 'Kunark',
+    15102: 'Velious',
+    15103: 'Antonica',
+    15104: 'Faydwer',
+    15105: 'Odus',
+    15106: 'Kunark',
+    15107: 'Velious',
+    15108: 'Luclin',
+    15110: 'Other Worlds',
+    15111: 'Ragnarok'
 };
 
 var g_title_categories = {

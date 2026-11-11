@@ -1284,7 +1284,14 @@ $lang = array(
             14981 => "Pilgrim's Bounty",                                          15001 => "Call of the Crusade 10-Player Raid",
             15002 => "Call of the Crusade 25-Player Raid",                        15003 => "Isle of Conquest",
             15021 => "Call of the Crusade",                                       15041 => "Fall of the Lich King 10-Player Raid",
-            15042 => "Fall of the Lich King 25-Player Raid",                      15062 => "Fall of the Lich King"
+            15042 => "Fall of the Lich King 25-Player Raid",                      15062 => "Fall of the Lich King",
+            // MergedWorlds: the EverQuest categories (Dungeons & Raids, Exploration) and Other Worlds
+            15100 => "Antonica",                                              15101 => "Kunark",
+            15102 => "Velious",                                               15103 => "Antonica",
+            15104 => "Faydwer",                                               15105 => "Odus",
+            15106 => "Kunark",                                                15107 => "Velious",
+            15108 => "Luclin",                                                15110 => "Other Worlds",
+            15111 => "Ragnarok"
         )
     ),
     'chrClass' => array(

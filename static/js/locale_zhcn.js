@@ -861,7 +861,13 @@ var mn_achievements = [
         [14777,"东部王国"], // Eastern Kingdoms,
         [14778,"卡利姆多"], // Kalimdor,
         [14779,"外域"], // Outland,
-        [14780,"诺森德"] // Northrend,
+        [14780,"诺森德"], // Northrend,
+        [15103,"Antonica"],
+        [15104,"Faydwer"],
+        [15105,"Odus"],
+        [15106,"Kunark"],
+        [15107,"Velious"],
+        [15108,"Luclin"]
     ]],
     [95,"PvP",,[
         [165,"竞技场"], // Arena,
@@ -885,7 +891,10 @@ var mn_achievements = [
         [15001,"北伐的召唤 - 10人团队"], // Call of the Crusade 10-Player Raid,
         [15002,"北伐的召唤 - 25人团队"], // Call of the Crusade 25-Player Raid,
         [15041,"巫妖王的陨落 - 10人团队"], // Fall of the Lich King 10-Player Raid,
-        [15042,"巫妖王的陨落 - 25人团队"] // Fall of the Lich King 25-Player Raid,
+        [15042,"巫妖王的陨落 - 25人团队"], // Fall of the Lich King 25-Player Raid,
+        [15100,"Antonica"],
+        [15101,"Kunark"],
+        [15102,"Velious"]
     ]],
     [169,"专业",,[
         [170,"烹饪"], // Cooking,
@@ -908,6 +917,9 @@ var mn_achievements = [
         [187,"情人节"], // Love is in the Air,
         [14941,"银色锦标赛"], // Argent Tournament,
         [14981,"感恩节"] // Pilgrim's Bounty,
+    ]],
+    [15110,"Other Worlds",,[
+        [15111,"Ragnarok"]
     ]],
     [81,"光辉事迹"],
     [1,"属性",,[
@@ -2423,7 +2435,18 @@ var g_achievement_categories = {
     15021: '北伐的召唤',
     15041: '巫妖王的陨落 - 10人团队',
     15042: '巫妖王的陨落 - 25人团队',
-    15062: '巫妖王的陨落'
+    15062: '巫妖王的陨落',
+    15100: 'Antonica',
+    15101: 'Kunark',
+    15102: 'Velious',
+    15103: 'Antonica',
+    15104: 'Faydwer',
+    15105: 'Odus',
+    15106: 'Kunark',
+    15107: 'Velious',
+    15108: 'Luclin',
+    15110: 'Other Worlds',
+    15111: 'Ragnarok'
 };
 
 var g_title_categories = {

@@ -1188,7 +1188,14 @@ $lang = array(
             14981 => "Die Pilgerfreuden",                                         15001 => "Der Ruf des Kreuzzugs - Schlachtzug für 10 Spieler",
             15002 => "Der Ruf des Kreuzzugs - Schlachtzug für 25 Spieler",        15003 => "Insel der Eroberung",
             15021 => "Der Ruf des Kreuzzugs",                                     15041 => "Der Untergang des Lichkönigs - Schlachtzug für 10 Spieler",
-            15042 => "Der Untergang des Lichkönigs - Schlachtzug für 25 Spieler", 15062 => "Der Untergang des Lichkönigs"
+            15042 => "Der Untergang des Lichkönigs - Schlachtzug für 25 Spieler", 15062 => "Der Untergang des Lichkönigs",
+            // MergedWorlds: the EverQuest categories (Dungeons & Raids, Exploration) and Other Worlds
+            15100 => "Antonica",                                              15101 => "Kunark",
+            15102 => "Velious",                                               15103 => "Antonica",
+            15104 => "Faydwer",                                               15105 => "Odus",
+            15106 => "Kunark",                                                15107 => "Velious",
+            15108 => "Luclin",                                                15110 => "Other Worlds",
+            15111 => "Ragnarok"
         )
     ),
     'chrClass' => array(
