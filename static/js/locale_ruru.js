@@ -969,6 +969,7 @@ var mn_guides = [
 var mn_tools = [
     [0,"Расчёт талантов","?talent",mn_talentCalc],
     [2,"Расчёт умений питомцев","?petcalc",mn_petCalc],
+    [9,"Ragnarok Character Builder","?rocalc"], // ROWOW
     [3,"Сравнение предметов","?compare"],
     [5,"Профили персонажей","?profiler",[
         [0,"Просмотр","?profiles"],

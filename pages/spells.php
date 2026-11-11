@@ -45,6 +45,14 @@ class SpellsPage extends GenericPage
         -11 => [6, 8, 10],                                  // Proficiencies [Weapon, Armor, Language]
         -13 => [1, 2, 3, 4, 5, 6, 7, 8, 9, 11],             // Glyphs => Class (GlyphType via filter)
         -15 => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], // EQWOW: EQ Class Spells => EQ class id
+        -16 => array(                                       // ROWOW: Ragnarok Skills => RO job id (?_ragnarok_job) => [1: active, 2: passive]
+            0 => [1, 2], 1 => [1, 2], 2 => [1, 2], 3 => [1, 2], 4 => [1, 2], 5 => [1, 2], 6 => [1, 2], 7 => [1, 2],
+            8 => [1, 2], 9 => [1, 2], 10 => [1, 2], 11 => [1, 2], 12 => [1, 2], 14 => [1, 2], 15 => [1, 2], 16 => [1, 2],
+            17 => [1, 2], 18 => [1, 2], 19 => [1, 2], 20 => [1, 2], 23 => [1, 2], 24 => [1, 2], 25 => [1, 2], 4001 => [1, 2],
+            4002 => [1, 2], 4003 => [1, 2], 4004 => [1, 2], 4005 => [1, 2], 4006 => [1, 2], 4007 => [1, 2], 4008 => [1, 2], 4009 => [1, 2],
+            4010 => [1, 2], 4011 => [1, 2], 4012 => [1, 2], 4013 => [1, 2], 4015 => [1, 2], 4016 => [1, 2], 4017 => [1, 2], 4018 => [1, 2],
+            4019 => [1, 2], 4020 => [1, 2], 4021 => [1, 2], 4046 => [1, 2], 4047 => [1, 2], 4049 => [1, 2]
+        ),
 
         0   => true,                                        // Uncategorized
         7   => array(                                       // Abilities: Class => Skill
@@ -266,6 +274,11 @@ class SpellsPage extends GenericPage
                         $eqSpellIds = DB::Aowow()->selectCol('SELECT DISTINCT `spellId` FROM ?_everquest_spell_learn');
 
                     $conditions[] = ['s.id', $eqSpellIds ?: [0]];
+
+                    break;
+                case -16:                                   // ROWOW: Ragnarok skills - the job's own skill tree (?_ragnarok_job_skill), every skill level's spell
+                    $roSpellIds = Ragnarok::jobSpellIds($this->category[1] ?? null, isset($this->category[2]) ? $this->category[2] == 2 : null);
+                    $conditions[] = ['s.id', $roSpellIds ?: [0]];
 
                     break;
                 case 7:                                     // Abilities
@@ -502,6 +515,20 @@ class SpellsPage extends GenericPage
     {
         $foo = [];
         $c = $this->category;                               // shothand
+        if ($c && $c[0] == -16)                             // ROWOW: Ragnarok Skills > job > active / passive
+        {
+            $foo = ['Ragnarok Skills'];
+            if (isset($c[1]))
+                $foo[] = Ragnarok::jobName($c[1]);
+            if (isset($c[2]))
+                $foo[] = $c[2] == 2 ? 'Passive Skills' : 'Active Skills';
+
+            foreach ($foo as $bar)
+                array_unshift($this->title, $bar);
+
+            return;
+        }
+
         if (isset($c[2]) && $c[0] == 11)
             array_unshift($foo, Lang::spell('cat', $c[0], $c[1], $c[2]));
         else if (isset($c[1]))

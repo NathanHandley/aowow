@@ -226,10 +226,10 @@ CLISetup::registerSetup("sql", new class extends SetupScript
     {
         // [guid, type, typeId, map, posX, posY [, respawn, spawnMask, phaseMask, areaId, floor, pathId]]
         return DB::World()->select(
-           'SELECT    c.`guid`, ?d AS `type`, c.`id` AS `typeId`, c.`map`, c.`position_x` AS `posX`, c.`position_y` AS `posY`, c.`spawntimesecs` AS `respawn`, c.`spawnMask`, c.`phaseMask`, c.`zoneId` AS `areaId`, IFNULL(ca.`path_id`, 0) AS `pathId`
+           'SELECT    c.`guid`, ?d AS `type`, c.`id` AS `typeId`, c.`map`, c.`position_x` AS `posX`, c.`position_y` AS `posY`, c.`spawntimesecs` AS `respawn`, c.`spawnMask`, c.`phaseMask`, IF(c.`map` BETWEEN ?d AND ?d AND c.`areaId` <> 0, c.`areaId`, c.`zoneId`) AS `areaId`, IFNULL(ca.`path_id`, 0) AS `pathId`
             FROM      creature c
             LEFT JOIN creature_addon ca ON ca.guid = c.guid',
-            Type::NPC
+            Type::NPC, Game::RO_MAP_MIN, Game::RO_MAP_MAX       // ROWOW: on RO maps the area is the RO map (zoneId is a stitched map's shell)
         );
     }
 
@@ -237,9 +237,9 @@ CLISetup::registerSetup("sql", new class extends SetupScript
     {
         // [guid, type, typeId, map, posX, posY [, respawn, spawnMask, phaseMask, areaId, floor, pathId]]
         return DB::World()->select(
-           'SELECT `guid`, ?d AS `type`, `id` AS `typeId`, `map`, `position_x` AS `posX`, `position_y` AS `posY`, `spawntimesecs` AS `respawn`, `spawnMask`, `phaseMask`, `zoneId` AS `areaId`
+           'SELECT `guid`, ?d AS `type`, `id` AS `typeId`, `map`, `position_x` AS `posX`, `position_y` AS `posY`, `spawntimesecs` AS `respawn`, `spawnMask`, `phaseMask`, IF(`map` BETWEEN ?d AND ?d AND `areaId` <> 0, `areaId`, `zoneId`) AS `areaId`
             FROM   gameobject',
-            Type::OBJECT
+            Type::OBJECT, Game::RO_MAP_MIN, Game::RO_MAP_MAX    // ROWOW: on RO maps the area is the RO map (zoneId is a stitched map's shell)
         );
     }
 
@@ -289,14 +289,15 @@ CLISetup::registerSetup("sql", new class extends SetupScript
     {
         // todo (med): at least `waypoints` can contain paths that do not belong to a creature but get assigned by SmartAI (or script) during runtime
         // in the future guid should be optional and additional parameters substituting guid should be passed down from NpcPage after SmartAI has been evaluated
+        $roArea = 'IF(c.`map` BETWEEN '.Game::RO_MAP_MIN.' AND '.Game::RO_MAP_MAX.' AND c.`areaId` <> 0, c.`areaId`, c.`zoneId`)';   // ROWOW: as in creature()
         return DB::World()->select(
-           'SELECT  c.`guid`, w.`entry` AS `creatureOrPath`, w.`pointId` AS `point`, c.`zoneId` AS `areaId`, c.`map`, w.`waittime` AS `wait`, w.`location_x` AS `posX`, w.`location_y` AS `posY`
+           'SELECT  c.`guid`, w.`entry` AS `creatureOrPath`, w.`pointId` AS `point`, '.$roArea.' AS `areaId`, c.`map`, w.`waittime` AS `wait`, w.`location_x` AS `posX`, w.`location_y` AS `posY`
               FROM  creature c
               JOIN  script_waypoint w ON c.`id` = w.`entry` UNION
-            SELECT  c.`guid`, w.`entry` AS `creatureOrPath`, w.`pointId` AS `point`, c.`zoneId` AS `areaId`, c.`map`,            0 AS `wait`, w.`position_x` AS `posX`, w.`position_y` AS `posY`
+            SELECT  c.`guid`, w.`entry` AS `creatureOrPath`, w.`pointId` AS `point`, '.$roArea.' AS `areaId`, c.`map`,            0 AS `wait`, w.`position_x` AS `posX`, w.`position_y` AS `posY`
               FROM  creature c
               JOIN  waypoints w ON c.`id` = w.`entry` UNION
-            SELECT  c.`guid`,   -w.`id` AS `creatureOrPath`,              w.`point`, c.`zoneId` AS `areaId`, c.`map`,    w.`delay` AS `wait`, w.`position_x` AS `posX`, w.`position_y` AS `posY`
+            SELECT  c.`guid`,   -w.`id` AS `creatureOrPath`,              w.`point`, '.$roArea.' AS `areaId`, c.`map`,    w.`delay` AS `wait`, w.`position_x` AS `posX`, w.`position_y` AS `posY`
               FROM  creature c
               JOIN  creature_addon ca ON ca.`guid` = c.`guid`
               JOIN  waypoint_data w ON w.`id` = ca.`path_id`

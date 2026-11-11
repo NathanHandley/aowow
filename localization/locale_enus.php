@@ -116,6 +116,7 @@ $lang = array(
         'compareTool'   => "Item Comparison Tool",
         'talentCalc'    => "Talent Calculator",
         'petCalc'       => "Hunter Pet Calculator",
+        'roCalc'        => "Ragnarok Character Builder",    // ROWOW
         'chooseClass'   => "Choose a class",
         'chooseFamily'  => "Choose a pet family",
 
@@ -1333,7 +1334,9 @@ $lang = array(
             "Eastern Kingdoms",         "Kalimdor",                 "Dungeons",                 "Raids",                    "Unused",                   null,
             "Battlegrounds",            null,                       "Outland",                  "Arenas",                   "Northrend",
             // EQWOW: EverQuest continents (categories = continent map ids)
-            895 => "Antonica",          896 => "Odus",              897 => "Faydwer",           898 => "Kunark",            899 => "Velious"
+            895 => "Antonica",          896 => "Odus",              897 => "Faydwer",           898 => "Kunark",            899 => "Velious",
+            // ROWOW: Ragnarok Online maps (Game::RO_ZONE_CAT_WORLD / RO_ZONE_CAT_INDOORS)
+            2453 => "Midgard",          1500 => "Midgard Dungeons & Interiors"
         )
     ),
     'quest' => array(
@@ -2017,7 +2020,7 @@ $lang = array(
         'usableBy'      => "Usable by",
         'usableByEQ'    => "Usable by EQ class",            // EQWOW
         'itemOrigin'    => "Game of origin",                // EQWOW
-        'eqOrigin'      => [null, "EverQuest", "World of Warcraft"], // EQWOW - indexes match filter values 1 / 2
+        'eqOrigin'      => [null, "EverQuest", "World of Warcraft", "Ragnarok Online"], // EQWOW - indexes match filter values 1 / 2 (ROWOW: 3)
         'buyout'        => "Buyout price",                  // BUYOUT_PRICE
         'each'          => "each",
         'tabOther'      => "Other",

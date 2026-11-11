@@ -85,6 +85,7 @@ class AjaxData extends AjaxHandler
                 case 'item-scaling':
                 case 'realms':
                 case 'statistics':
+                case 'ro-builder':                          // ROWOW - Ragnarok character builder
                     if (!Util::loadStaticFile($set, $result) && Cfg::get('DEBUG'))
                         $result .= "alert('could not fetch static data: ".$set."');";
 

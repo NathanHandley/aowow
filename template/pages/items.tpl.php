@@ -144,6 +144,31 @@ foreach (Lang::item('eqOrigin') as $k => $str):
 endforeach;
 ?>
                                 </select></td>
+<?php if ($roJobs = Ragnarok::jobs()): ?>
+                        </tr><tr>
+                            <!-- ROWOW: filter by Ragnarok job (item_db Jobs / Classes of the RO equipment) -->
+                            <td class="padded">Usable by RO job<?=Lang::main('colon'); ?></td>
+                            <td class="padded" colspan="2">
+                                &nbsp;<select name="ubro">
+                                    <option></option>
+<?php
+    $roTier = null;
+    foreach ($roJobs as $k => $job):
+        if ($job['itemJobIdx'] < 0):
+            continue;
+        endif;
+        if ($roTier !== $job['tier']):
+            echo ($roTier !== null ? "                                    </optgroup>\n" : '').'                                    <optgroup label="'.Ragnarok::JOB_TIERS[$job['tier']].'">'."\n";
+            $roTier = $job['tier'];
+        endif;
+        echo '                            <option value="'.$k.'"'.(isset($f['ubro']) && $k == $f['ubro'] ? ' selected' : null).'>'.htmlspecialchars($job['displayName'])."</option>\n";
+    endforeach;
+    if ($roTier !== null):
+        echo "                                    </optgroup>\n";
+    endif;
+?>
+                                </select></td>
+<?php endif; ?>
                         </tr>
                     </table>
 

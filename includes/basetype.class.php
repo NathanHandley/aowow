@@ -1000,7 +1000,7 @@ abstract class Filter
             if ($list === self::ENUM_FACTION)
                 $this->enums[$cr] = array_merge($list, array_keys(Game::eqFilterFactions()));
             else if ($list === self::ENUM_ZONE)
-                $this->enums[$cr] = array_merge($list, array_keys(Game::eqFilterZones()));
+                $this->enums[$cr] = array_merge($list, array_keys(Game::eqFilterZones()), array_keys(Game::roFilterZones()));   // ROWOW: + RO maps
         }
         // EQWOW end
 

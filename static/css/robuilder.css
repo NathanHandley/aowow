@@ -1,0 +1,173 @@
+/* ROWOW - Ragnarok character builder (?rocalc) */
+
+.rb {
+    margin: 0 auto;
+}
+
+.rb-intro {
+    margin-bottom: 12px;
+    color: #ccc;
+}
+
+.rb-left {
+    float: left;
+    width: 380px;
+}
+
+.rb-right {
+    margin-left: 396px;
+}
+
+.rb-box {
+    background: #141414;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    padding: 6px 10px 10px 10px;
+    margin-bottom: 12px;
+}
+
+.rb-box h3 {
+    margin: 0 0 6px 0;
+    padding: 0;
+}
+
+.rb-box h4 {
+    margin: 12px 0 4px 0;
+    padding: 0 0 2px 0;
+    border-bottom: 1px solid #404040;
+}
+
+.rb-path th,
+.rb-stats th,
+.rb-derived th {
+    text-align: left;
+    padding: 2px 8px 2px 0;
+    color: #ffd100;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.rb-path td,
+.rb-stats td,
+.rb-derived td {
+    padding: 2px 6px 2px 0;
+}
+
+.rb-stats td input {
+    width: 32px;
+    text-align: right;
+}
+
+.rb-derived {
+    width: 100%;
+}
+
+.rb-derived td {
+    color: #fff;
+}
+
+.rb-points {
+    margin-top: 6px;
+    font-weight: bold;
+}
+
+.rb-note {
+    margin-top: 6px;
+    font-size: 11px;
+}
+
+.rb-weapon {
+    margin-top: 6px;
+}
+
+.rb-weapon label {
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+a.rb-btn {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 15px;
+    margin: 0 2px;
+    text-align: center;
+    background: #242424;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #fff;
+    text-decoration: none !important;
+    font-weight: bold;
+}
+
+a.rb-btn:hover {
+    background: #3a3a3a;
+    border-color: #888;
+}
+
+a.rb-btn.rb-off {
+    color: #555;
+    border-color: #333;
+    cursor: default;
+    opacity: .4;
+    filter: alpha(opacity=40);
+}
+
+.rb-origin {
+    color: #ffd100;
+    margin: 6px 0 2px 0;
+}
+
+.rb-skills {
+    overflow: hidden;
+}
+
+.rb-skill {
+    float: left;
+    width: 280px;
+    height: 40px;
+    margin: 2px 8px 4px 0;
+    position: relative;
+}
+
+.rb-skill .iconmedium {
+    float: left;
+    margin-right: 6px;
+}
+
+.rb-skill.rb-locked .iconmedium {
+    opacity: .45;
+    filter: alpha(opacity=45);
+}
+
+.rb-skill-info {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 18px;
+}
+
+.rb-skill.rb-learned .rb-lvl {
+    color: #1eff00;
+}
+
+.rb-lvl {
+    color: #9d9d9d;
+}
+
+.rb-req {
+    font-size: 11px;
+}
+
+.rb-bottom {
+    margin-top: 8px;
+}
+
+.rb-bottom a {
+    white-space: nowrap;
+}
+
+.rb-bottom a.rb-link {
+    white-space: normal;
+    word-break: break-all;
+}

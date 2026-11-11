@@ -102,6 +102,28 @@ endforeach;
                                     <td>&nbsp;<input type="text" name="mineql" maxlength="2" class="smalltextbox" <?=(isset($f['mineql']) ? 'value="'.$f['mineql'].'" ' : null); ?>/> - <input type="text" name="maxeql" maxlength="2" class="smalltextbox" <?=(isset($f['maxeql']) ? 'value="'.$f['maxeql'].'" ' : null); ?>/></td>
                                 </tr></table>
                             </td>
+<?php if ($roJobs = Ragnarok::jobs()): ?>
+                        </tr><tr>
+                            <!-- ROWOW: Ragnarok skills by job skill tree, active / passive -->
+                            <td class="padded">RO job<?=Lang::main('colon'); ?></td>
+                            <td class="padded">&nbsp;<select name="roj">
+                                <option></option>
+<?php
+    foreach ($roJobs as $i => $job):
+        if ($job['tier'] == 6):                             // Baby jobs have their normal job's tree
+            continue;
+        endif;
+        echo '                                <option value="'.$i.'"'.(isset($f['roj']) && $f['roj'] == $i ? ' selected' : null).'>'.htmlspecialchars($job['displayName'])."</option>
+";
+    endforeach;
+?>
+                            </select></td>
+                            <td class="padded">&nbsp;&nbsp;&nbsp;RO skill type<?=Lang::main('colon'); ?>&nbsp;<select name="rop">
+                                <option></option>
+                                <option value="1"<?=(isset($f['rop']) && $f['rop'] == 1 ? ' selected' : null); ?>>Active</option>
+                                <option value="2"<?=(isset($f['rop']) && $f['rop'] == 2 ? ' selected' : null); ?>>Passive</option>
+                            </select></td>
+<?php endif; ?>
                         </tr><tr>
                             <td class="padded"><?=Util::ucFirst(Lang::game('race')).Lang::main('colon'); ?></td>
                             <td class="padded">&nbsp;<select name="ra">

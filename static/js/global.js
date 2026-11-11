@@ -869,11 +869,12 @@ var PageTemplate = new function()
                     [, LANG.calculators],
                     Menu.findItem(mn_tools, [0]), // Talent Calculator
                     Menu.findItem(mn_tools, [2]), // Hunter Pet Calculator
+                    Menu.findItem(mn_tools, [9]), // ROWOW - Ragnarok Character Builder
                     Menu.findItem(mn_tools, [3])  // Item Comparison
                 ];
 
                 // MoP link
-                if (mn_tools[2][0] == 10) {
+                if (mn_tools[3][0] == 10) {                 // ROWOW - index 3: the Ragnarok Character Builder is index 2
                     var tmp = calculators[3];
                     calculators[3] = Menu.findItem(mn_tools, [10]);
                     calculators[4] = tmp;
@@ -882,7 +883,7 @@ var PageTemplate = new function()
                     Menu.addButtons($buttons, Menu.implode(mn_tools.slice(4))); // Skip first 4 menu items
                 } else {
                     Menu.addButtons($buttons, Menu.implode(calculators));
-                    Menu.addButtons($buttons, Menu.implode(mn_tools.slice(3))); // Skip first 4 menu items
+                    Menu.addButtons($buttons, Menu.implode(mn_tools.slice(4))); // Skip first 4 menu items (ROWOW: was 3, before the Ragnarok Character Builder)
                 }
 
                 break;
@@ -1520,6 +1521,11 @@ function g_getMoneyHtml(money, side, costItems, costCurrency, achievementPoints)
     }
 
     return html;
+}
+
+// ROWOW: Ragnarok Online prices
+function g_getZenyHtml(zeny) {
+    return '<span class="moneyzeny">' + $WH.number_format(zeny || 0) + ' Zeny</span>';
 }
 
 function g_GetExpansionClassName(expansion) {
@@ -7611,6 +7617,12 @@ Listview.extraCols = {
                     else if (row.react[0] == -1 && row.react[1] == 1) { // Horde only
                         side = 2;
                     }
+                }
+
+                // ROWOW: Ragnarok items cost zeny (a zeny is a copper)
+                if (row.zeny && !(items && items.length) && !(currency && currency.length)) {
+                    td.innerHTML = g_getZenyHtml(money);
+                    return;
                 }
 
                 Listview.funcBox.appendMoney(td, money, side, items, currency);

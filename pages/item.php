@@ -263,6 +263,13 @@ class ItemPage extends genericPage
                     else
                         $cost = '[money';
 
+                    // ROWOW - RO items cost zeny (a zeny is a copper)
+                    if (isset($this->subject->roData[$this->typeId]) && !$tokens && !$currency)
+                    {
+                        $costList[] = Ragnarok::zeny((int)(($data[0] ?? 0) / $divisor), false);
+                        continue;
+                    }
+
                     $stringify = function(&$v) use ($divisor) { return $v = $v[0] . ',' . ($v[1] / $divisor); };
 
                     if ($tokens)
@@ -299,6 +306,10 @@ class ItemPage extends genericPage
                 $infobox[] = Lang::breakTextClean($text, 30, LANG::FMT_MARKUP);
             }
         }
+
+        // ROWOW - Ragnarok item: RO type and id, zeny prices, card enchantment
+        if (isset($this->subject->roData[$this->typeId]))
+            $infobox = array_merge($infobox, Ragnarok::itemInfobox($this->subject->roData[$this->typeId]));
 
         // repair cost
         if ($_ = $this->subject->getField('repairPrice'))
@@ -825,6 +836,9 @@ class ItemPage extends genericPage
 
                     if ($x = $this->subject->getField('buyCount'))
                         $row['stack'] = $x;
+
+                    if (isset($this->subject->roData[$this->typeId]))   // ROWOW - cost column in zeny
+                        $row['zeny'] = 1;
                 }
 
                 if ($cnd->toListviewColumn($sbData, $extraCols, 'id', $this->typeId))

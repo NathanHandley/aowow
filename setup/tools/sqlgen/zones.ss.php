@@ -107,6 +107,17 @@ CLISetup::registerSetup("sql", new class extends SetupScript
         }
 
 
+        // ROWOW: Ragnarok Online maps. Every RO map is an area of its own (AreaTable RO_AREA_MIN..MAX): the top area of a WoW map of
+        // its own, or a subarea of a stitched WoW map's shell area (Midgard, and dungeon groups like Thanatos Tower or Clock Tower).
+        // List every RO map as a zone (parentArea 0) under Midgard (stitched into the Midgard world map) or Midgard dungeons &
+        // interiors (the rest), and hide the shells (the areas other RO areas belong to; they are no RO map of their own)
+        $roShells = DB::Aowow()->selectCol('SELECT DISTINCT `areaTable` FROM dbc_areatable WHERE `id` BETWEEN ?d AND ?d AND `areaTable` <> 0', Game::RO_AREA_MIN, Game::RO_AREA_MAX);
+        if ($roShells)
+            DB::Aowow()->query('UPDATE ?_zones SET `cuFlags` = `cuFlags` | ?d WHERE `id` IN (?a)', CUSTOM_EXCLUDE_FOR_LISTVIEW, $roShells);
+        DB::Aowow()->query('UPDATE ?_zones SET `cuFlags` = `cuFlags` & ~?d, `parentArea` = 0, `category` = IF(`mapId` = ?d, ?d, ?d) WHERE `id` BETWEEN ?d AND ?d{ AND `id` NOT IN (?a)}',
+            CUSTOM_EXCLUDE_FOR_LISTVIEW, Game::RO_MIDGARD_MAP, Game::RO_ZONE_CAT_WORLD, Game::RO_ZONE_CAT_INDOORS, Game::RO_AREA_MIN, Game::RO_AREA_MAX, $roShells ?: DBSIMPLE_SKIP);
+
+
         // set missing graveyards from areatrigger data (auto-resurrect map or just plain errors)
         // grouped because naxxramas _just has_ to be special with 4 entrances...
         if ($missingMaps = DB::Aowow()->selectCol('SELECT `id` FROM dbc_map WHERE `parentX` = 0 AND `parentY` = 0 AND `parentMapId` > -1 AND `areaType` NOT IN (0, 3, 4)'))

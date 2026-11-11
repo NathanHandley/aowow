@@ -74,6 +74,9 @@ switch ($pageCall)
     case 'quests':
     case 'race':
     case 'races':
+    case 'ragnarok-job':                                    // ROWOW - Ragnarok Online job (class)
+    case 'ragnarok-jobs':                                   // ROWOW - Ragnarok Online jobs list
+    case 'rocalc':                                          // ROWOW - tool: Ragnarok character builder
     case 'screenshot':                                      // prepare uploaded screenshots
     case 'search':                                          // tool: searches
     case 'skill':

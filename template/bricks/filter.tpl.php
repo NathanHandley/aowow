@@ -5,10 +5,13 @@
 // ([null, label] starts a group), the EverQuest factions as an "EverQuest" optgroup
 $eqZones    = array_map(null, array_keys(Game::eqFilterZones()),    array_values(Game::eqFilterZones()));
 $eqFactions = array_map(null, array_keys(Game::eqFilterFactions()), array_values(Game::eqFilterFactions()));
-echo "                (function (z, f) {\n";
-echo "                    if (z.length) { LANG.fidropdowns.zone.unshift([null, 'Azeroth']); LANG.fidropdowns.zone.push([null, 'Norrath']); LANG.fidropdowns.zone.push.apply(LANG.fidropdowns.zone, z); }\n";
+$roZones    = array_map(null, array_keys(Game::roFilterZones()),    array_values(Game::roFilterZones()));   // ROWOW: Ragnarok Online maps as a "Midgard" optgroup
+echo "                (function (z, f, r) {\n";
+echo "                    if (z.length || r.length) LANG.fidropdowns.zone.unshift([null, 'Azeroth']);\n";
+echo "                    if (z.length) { LANG.fidropdowns.zone.push([null, 'Norrath']); LANG.fidropdowns.zone.push.apply(LANG.fidropdowns.zone, z); }\n";
+echo "                    if (r.length) { LANG.fidropdowns.zone.push([null, 'Midgard']); LANG.fidropdowns.zone.push.apply(LANG.fidropdowns.zone, r); }\n";
 echo "                    if (f.length) { LANG.fidropdowns.faction.push([null, 'EverQuest']); LANG.fidropdowns.faction.push.apply(LANG.fidropdowns.faction, f); }\n";
-echo "                })(".Util::toJSON($eqZones).", ".Util::toJSON($eqFactions).");\n";
+echo "                })(".Util::toJSON($eqZones).", ".Util::toJSON($eqFactions).", ".Util::toJSON($roZones).");\n";
 // EQWOW end
 ?>
 <?php if (isset($this->region) && isset($this->realm)): ?>

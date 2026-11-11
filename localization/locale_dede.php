@@ -116,6 +116,7 @@ $lang = array(
         'compareTool'   => "Gegenstandsvergleichswerkzeug",
         'talentCalc'    => "Talentrechner",
         'petCalc'       => "Begleiterrechner",
+        'roCalc'        => "Ragnarok Character Builder",    // ROWOW
         'chooseClass'   => "Wählt eine Klasse",
         'chooseFamily'  => "Wählt eine Tierart",
 

@@ -64,6 +64,7 @@
 .moneysocketyellow    { padding-right: 18px; background-image: url(../images/icons/socket-yellow.gif);    }
 .moneysocketblue      { padding-right: 18px; background-image: url(../images/icons/socket-blue.gif);      }
 .moneysocketprismatic { padding-right: 18px; background-image: url(../images/icons/socket-prismatic.gif); }
+.moneyzeny            { color: white; white-space: nowrap; } /* ROWOW - Ragnarok Online prices */
 
 a.moneyitem, a.moneysocketmeta, a.moneysocketred, a.moneysocketyellow, a.moneysocketblue, a.moneysocketprismatic,  a.moneyachievement{
     text-decoration: none !important;

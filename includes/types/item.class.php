@@ -25,6 +25,8 @@ class ItemList extends BaseType
     private         $enhanceR   = [];
     private         $relEnchant = [];
 
+    public          $roData     = [];                       // ROWOW - [itemId => ?_ragnarok_item row] of the RO items
+
     protected       $queryBase  = 'SELECT i.*, i.block AS tplBlock, i.armor AS tplArmor, i.dmgMin1 AS tplDmgMin1, i.dmgMax1 AS tplDmgMax1, i.id AS ARRAY_KEY, i.id AS id FROM ?_items i';
     protected       $queryOpts  = array(                    // 3 => Type::ITEM
                         'i'   => [['is', 'src', 'ic'], 'o' => 'i.quality DESC, i.itemLevel DESC'],
@@ -32,6 +34,7 @@ class ItemList extends BaseType
                         'is'  => ['j' => ['?_item_stats `is`  ON `is`.`type` = 3 AND `is`.`typeId` = `i`.`id`', true], 's' => ', `is`.*'],
                         's'   => ['j' => ['?_spell      `s`   ON `s`.`effect1CreateItemId` = `i`.`id`', true], 'g' => 'i.id'],
                         'e'   => ['j' => ['?_events     `e`   ON `e`.`id` = `i`.`eventId`', true], 's' => ', e.holidayId'],
+                        'ro'  => ['j' => ['?_ragnarok_item `ro` ON `ro`.`id` = `i`.`id`', true]],  // ROWOW - only joined for the Ragnarok filters
                         'src' => ['j' => ['?_source     `src` ON `src`.`type` = 3 AND `src`.`typeId` = `i`.`id`', true], 's' => ', moreType, moreTypeId, moreZoneId, moreMask, src1, src2, src3, src4, src5, src6, src7, src8, src9, src10, src11, src12, src13, src14, src15, src16, src17, src18, src19, src20, src21, src22, src23, src24']
                     );
 
@@ -85,6 +88,10 @@ class ItemList extends BaseType
                 unset($_curTpl['src'.$i]);
             }
         }
+
+        // ROWOW - the RO side of the Ragnarok items
+        if ($this->templates)
+            $this->roData = Ragnarok::itemData(array_keys($this->templates));
     }
 
     // use if you JUST need the name
@@ -455,6 +462,10 @@ class ItemList extends BaseType
 
             if (!empty($this->curTpl['cooldown']))
                 $data[$this->id]['cooldown'] = $this->curTpl['cooldown'] / 1000;
+
+            // ROWOW - prices in zeny (listview money columns) and the RO stats of the Ragnarok filter columns
+            if (isset($this->roData[$this->id]))
+                $data[$this->id] = array_merge($data[$this->id], Ragnarok::listviewFields($this->roData[$this->id]));
         }
 
         foreach ($extCostOther as $itemId => $duplicates)
@@ -650,6 +661,8 @@ class ItemList extends BaseType
         }
         else if ($_slot && $_class != ITEM_CLASS_CONTAINER) // yes, slot can occur on random items and is then also displayed <_< .. excluding Bags >_>
             $x .= '<br />'.Lang::item('inventoryType', $_slot).'<br />';
+        else if (isset($this->roData[$this->id]))           // ROWOW - RO type, ATK/DEF, slots, weight, script bonuses, jobs
+            $x .= Ragnarok::itemTooltip($this->roData[$this->id]);
         else
             $x .= '<br />';
 
@@ -1205,7 +1218,12 @@ class ItemList extends BaseType
         if ($xMisc)
             $x .= implode('<br />', $xMisc);
 
-        if ($sp = $this->curTpl['sellPrice'])
+        if (isset($this->roData[$this->id]))               // ROWOW - RO items are priced in zeny
+        {
+            if ($sp = $this->roData[$this->id]['sellZeny'])
+                $x .= '<div class="q1 whtt-sellprice">'.Lang::item('sellPrice').Lang::main('colon').Ragnarok::zeny($sp).'</div>';
+        }
+        else if ($sp = $this->curTpl['sellPrice'])
             $x .= '<div class="q1 whtt-sellprice">'.Lang::item('sellPrice').Lang::main('colon').Util::formatMoney($sp).'</div>';
 
         if (!$subOf)
@@ -2007,6 +2025,30 @@ class ItemListFilter extends Filter
         172 => [parent::CR_CALLBACK,  'cbObtainedBy',           12,                      null              ], // rewardedbyachievement [yn]
         176 => [parent::CR_STAFFFLAG, 'flags'                                                              ], // flags
         177 => [parent::CR_STAFFFLAG, 'flagsExtra'                                                         ], // flags2
+        // ROWOW - Ragnarok Online item stats (?_ragnarok_item, sqlgen ragnarok); script bonuses are the unconditional ones
+        300 => [parent::CR_NUMERIC,   'ro.str',                 NUM_CAST_INT,            true              ], // rostr
+        301 => [parent::CR_NUMERIC,   'ro.agi',                 NUM_CAST_INT,            true              ], // roagi
+        302 => [parent::CR_NUMERIC,   'ro.vit',                 NUM_CAST_INT,            true              ], // rovit
+        303 => [parent::CR_NUMERIC,   'ro.int',                 NUM_CAST_INT,            true              ], // roint
+        304 => [parent::CR_NUMERIC,   'ro.dex',                 NUM_CAST_INT,            true              ], // rodex
+        305 => [parent::CR_NUMERIC,   'ro.luk',                 NUM_CAST_INT,            true              ], // roluk
+        306 => [parent::CR_NUMERIC,   'ro.atk',                 NUM_CAST_INT,            true              ], // roatk
+        307 => [parent::CR_NUMERIC,   'ro.matk',                NUM_CAST_INT,            true              ], // romatk
+        308 => [parent::CR_NUMERIC,   'ro.matkRate',            NUM_CAST_INT,            true              ], // romatkrate
+        309 => [parent::CR_NUMERIC,   'ro.def',                 NUM_CAST_INT,            true              ], // rodef
+        310 => [parent::CR_NUMERIC,   'ro.mdef',                NUM_CAST_INT,            true              ], // romdef
+        311 => [parent::CR_NUMERIC,   'ro.slots',               NUM_CAST_INT,            true              ], // roslots
+        312 => [parent::CR_NUMERIC,   'ro.weaponLevel',         NUM_CAST_INT,            true              ], // roweaponlevel
+        313 => [parent::CR_NUMERIC,   'ro.weight',              NUM_CAST_FLOAT,          true              ], // roweight
+        314 => [parent::CR_NUMERIC,   'ro.equipLevelMin',       NUM_CAST_INT,            true              ], // roequiplevel
+        315 => [parent::CR_NUMERIC,   'ro.hit',                 NUM_CAST_INT,            true              ], // rohit
+        316 => [parent::CR_NUMERIC,   'ro.flee',                NUM_CAST_INT,            true              ], // roflee
+        317 => [parent::CR_NUMERIC,   'ro.crit',                NUM_CAST_INT,            true              ], // rocrit
+        318 => [parent::CR_NUMERIC,   'ro.maxhp',               NUM_CAST_INT,            true              ], // romaxhp
+        319 => [parent::CR_NUMERIC,   'ro.maxsp',               NUM_CAST_INT,            true              ], // romaxsp
+        320 => [parent::CR_NUMERIC,   'ro.aspdRate',            NUM_CAST_INT,            true              ], // roaspd
+        321 => [parent::CR_CALLBACK,  'cbRagnarokFlag',         'refineable',            null              ], // rorefineable [yn]
+        322 => [parent::CR_CALLBACK,  'cbRagnarokCategory',     null,                    null              ], // rocategory [enum]
     );
 
     protected $inputFields   = array(
@@ -2014,7 +2056,7 @@ class ItemListFilter extends Filter
         'wtv'   => [parent::V_RANGE,    [1, 999],                                        true ], // weight values
         'jc'    => [parent::V_LIST,     [1],                                             false], // use jewelcrafter gems for weight calculation
         'gm'    => [parent::V_LIST,     [2, 3, 4],                                       false], // gem rarity for weight calculation
-        'cr'    => [parent::V_RANGE,    [1, 177],                                        true ], // criteria ids
+        'cr'    => [parent::V_RANGE,    [1, 322],                                        true ], // criteria ids (ROWOW: 300+ Ragnarok)
         'crs'   => [parent::V_LIST,     [parent::ENUM_NONE, parent::ENUM_ANY, [0, 99999]], true ], // criteria operators
         'crv'   => [parent::V_REGEX,    parent::PATTERN_CRV,                             true ], // criteria values - only printable chars, no delimiters
         'upg'   => [parent::V_REGEX,    '/[^\d:]/ui',                                    false], // upgrade item ids
@@ -2024,7 +2066,7 @@ class ItemListFilter extends Filter
         'ub'    => [parent::V_LIST,     [[1, 9], 11],                                    false], // usable by classId
         'ubeq'  => [parent::V_RANGE,    [1, 14],                                         false], // EQWOW: usable by EQ classId (1-14)
         'ubop'  => [parent::V_EQUAL,    1,                                               false], // EQWOW: ub/ubeq connector (unset: OR, 1: AND - one character with both classes)
-        'eqi'   => [parent::V_LIST,     [1, 2],                                          false], // EQWOW: item origin (1: EverQuest only, 2: WoW only, unset: both)
+        'eqi'   => [parent::V_LIST,     [1, 2, 3],                                       false], // EQWOW: item origin (1: EverQuest only, 2: WoW only, 3: Ragnarok Online only (ROWOW), unset: all)
         'qu'    => [parent::V_RANGE,    [0, 7],                                          true ], // quality ids
         'ty'    => [parent::V_CALLBACK, 'cbTypeCheck',                                   true ], // item type - dynamic by current group
         'sl'    => [parent::V_CALLBACK, 'cbSlotCheck',                                   true ], // item slot - dynamic by current group
@@ -2032,7 +2074,8 @@ class ItemListFilter extends Filter
         'minle' => [parent::V_RANGE,    [1, 999],                                        false], // item level min
         'maxle' => [parent::V_RANGE,    [1, 999],                                        false], // item level max
         'minrl' => [parent::V_RANGE,    [1, MAX_LEVEL],                                  false], // required level min
-        'maxrl' => [parent::V_RANGE,    [1, MAX_LEVEL],                                  false]  // required level max
+        'maxrl' => [parent::V_RANGE,    [1, MAX_LEVEL],                                  false], // required level max
+        'ubro'  => [parent::V_RANGE,    [0, 4999],                                       false]  // ROWOW: usable by Ragnarok job id (?_ragnarok_job)
     );
 
     public function __construct($fromPOST = false, $opts = [])
@@ -2196,14 +2239,18 @@ class ItemListFilter extends Filter
             $parts[] = $ubEq;
 
         // EQWOW: item origin - EverQuest items occupy the ItemTemplateIDMin/Max id range from mod_everquest_systemconfigs
+        // ROWOW: Ragnarok Online items occupy Game::roItemIdRange() (mod_rowow_item); 3 = RO items only, and WoW excludes them too
         if (isset($_v['eqi']))
-            if ($range = Game::eqItemIdRange())
-            {
-                if ($_v['eqi'] == 1)                        // EverQuest items only
-                    $parts[] = ['AND', ['i.id', $range[0], '>='], ['i.id', $range[1], '<=']];
-                else                                        // World of Warcraft items only
-                    $parts[] = ['OR', ['i.id', $range[0], '<'], ['i.id', $range[1], '>']];
-            }
+        {
+            $range   = Game::eqItemIdRange();
+            $roRange = Game::roItemIdRange();
+            if ($_v['eqi'] == 1)                            // EverQuest items only
+                $parts[] = $range ? ['AND', ['i.id', $range[0], '>='], ['i.id', $range[1], '<=']] : ['i.id', 0];
+            else if ($_v['eqi'] == 3)                       // Ragnarok Online items only
+                $parts[] = $roRange ? ['AND', ['i.id', $roRange[0], '>='], ['i.id', $roRange[1], '<=']] : ['i.id', 0];
+            else if ($notOther = array_map(fn($r) => ['OR', ['i.id', $r[0], '<'], ['i.id', $r[1], '>']], array_values(array_filter([$range, $roRange]))))
+                $parts[] = array_merge(['AND'], $notOther); // World of Warcraft items only (one part: 'ma' ORs the parts)
+        }
 
         // quality [list]
         if (isset($_v['qu']))
@@ -2259,7 +2306,35 @@ class ItemListFilter extends Filter
         if (isset($_v['maxrl']))
             $parts[] = ['requiredLevel', $_v['maxrl'], '<='];
 
+        // ROWOW: usable by Ragnarok job - equipment whose item_db Jobs and Classes allow the job (as mod-rowow checks them);
+        //        the stat-less post-renewal looks (all jobs, ~4700 headgears) are left out
+        if (isset($_v['ubro']))
+        {
+            if ($job = Ragnarok::jobs()[$_v['ubro']] ?? null)
+                $parts[] = $job['itemJobIdx'] >= 0 ? ['AND', ['ro.isEquip', 1], ['ro.isRenewal', 0], [['ro.jobMask', 1 << $job['itemJobIdx'], '&'], 0, '!'], [['ro.classMask', $job['itemClass'], '&'], 0, '!']] : ['i.id', 0];
+            else
+                $parts[] = ['i.id', 0];
+        }
+
         return $parts;
+    }
+
+    // ROWOW - yes/no on a ?_ragnarok_item flag column (RO items only either way)
+    protected function cbRagnarokFlag(int $cr, int $crs, string $crv, string $field) : ?array
+    {
+        if (!$this->int2Bool($crs))
+            return null;
+
+        return ['ro.'.$field, $crs ? 1 : 0];
+    }
+
+    // ROWOW - RO item category (Ragnarok::CATEGORIES)
+    protected function cbRagnarokCategory(int $cr, int $crs, string $crv) : ?array
+    {
+        if (!isset(Ragnarok::CATEGORIES[$crs]))
+            return null;
+
+        return ['ro.roCategory', $crs];
     }
 
     protected function cbFactionQuestReward(int $cr, int $crs, string $crv) : ?array

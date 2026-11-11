@@ -2455,7 +2455,9 @@ class SpellListFilter extends Filter
         'me'    => [parent::V_RANGE,    [1, 31],                                         false], // mechanics
         'eqc'    => [parent::V_RANGE,   [1, 14],                                         false], // EQWOW: learnable by EQ classId (1-14)
         'mineql' => [parent::V_RANGE,   [1, 99],                                         false], // EQWOW: EQ learn level min (from spell scrolls)
-        'maxeql' => [parent::V_RANGE,   [1, 99],                                         false]  // EQWOW: EQ learn level max (from spell scrolls)
+        'maxeql' => [parent::V_RANGE,   [1, 99],                                         false], // EQWOW: EQ learn level max (from spell scrolls)
+        'roj'    => [parent::V_RANGE,   [0, 4999],                                       false], // ROWOW: in the skill tree of Ragnarok job id (?_ragnarok_job)
+        'rop'    => [parent::V_LIST,    [1, 2],                                          false]  // ROWOW: Ragnarok skills only (1: active, 2: passive)
     );
 
     protected function createSQLForValues()
@@ -2526,6 +2528,13 @@ class SpellListFilter extends Filter
                 $_v['maxeql'] ?? DBSIMPLE_SKIP
             );
             $parts[] = ['s.id', $eqSpellIds ?: [0]];
+        }
+
+        // ROWOW: Ragnarok skills of a job's skill tree / active or passive RO skills (?_ragnarok_job_skill, ?_ragnarok_skill)
+        if (isset($_v['roj']) || isset($_v['rop']))
+        {
+            $roSpellIds = Ragnarok::jobSpellIds($_v['roj'] ?? null, isset($_v['rop']) ? $_v['rop'] == 2 : null);
+            $parts[] = ['s.id', $roSpellIds ?: [0]];
         }
 
         return $parts;

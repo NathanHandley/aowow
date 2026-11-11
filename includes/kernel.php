@@ -85,6 +85,10 @@ spl_autoload_register(function ($class) {
         case 'EQWorldBoss':
             require_once 'includes/components/EQWOW/EQWorldBoss.class.php';
             break;
+        // ROWOW - Ragnarok Online items, jobs and skills (sqlgen ragnarok)
+        case 'Ragnarok':
+            require_once 'includes/components/ROWOW/Ragnarok.class.php';
+            break;
     }
 });
 

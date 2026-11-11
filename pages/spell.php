@@ -195,6 +195,16 @@ class SpellPage extends GenericPage
 
         $infobox = Lang::getInfoBoxForFlags($this->subject->getField('cuFlags'));
 
+        // ROWOW - the Ragnarok skill level this spell is, and the jobs whose skill tree has it
+        if ($roInfo = Ragnarok::skillForSpell($this->typeId))
+        {
+            [$roSkill, $roLevel, $roJobs] = $roInfo;
+            $infobox[] = 'Ragnarok skill: '.$roSkill['displayName'].' Lv '.$roLevel.' / '.$roSkill['maxLevel'].' [span class=q0]('.$roSkill['name'].')[/span]';
+            $infobox[] = 'Skill type: '.($roSkill['passive'] ? 'Passive' : 'Active');
+            if ($roJobs)
+                $infobox[] = 'Jobs: '.implode(', ', array_map(fn($j) => '[url=?ragnarok-job='.$j.']'.Ragnarok::jobName((int)$j).'[/url]', $roJobs));
+        }
+
         // level
         if (!in_array($_cat, [-5, -6]))                     // not mount or vanity pet
         {

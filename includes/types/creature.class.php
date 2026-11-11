@@ -330,7 +330,7 @@ class CreatureListFilter extends Filter
 
     protected $inputFields = array(
         'cr'    => [parent::V_LIST,     [[1, 3],[5, 12], 15, 16, [18, 25], [27, 29], [31, 35], 37, 38, [40, 44]], true ], // criteria ids
-        'crs'   => [parent::V_LIST,     [parent::ENUM_NONE, parent::ENUM_ANY, [0, 9999]],                         true ], // criteria operators
+        'crs'   => [parent::V_LIST,     [parent::ENUM_NONE, parent::ENUM_ANY, [0, 99999]],                        true ], // criteria operators (ROWOW: was 9999, RO zone ids are 10000+)
         'crv'   => [parent::V_REGEX,    parent::PATTERN_CRV,                                                      true ], // criteria values - only printable chars, no delimiter
         'na'    => [parent::V_REGEX,    parent::PATTERN_NAME,                                                     false], // name / subname - only printable chars, no delimiter
         'ex'    => [parent::V_EQUAL,    'on',                                                                     false], // also match subname

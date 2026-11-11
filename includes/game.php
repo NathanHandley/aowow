@@ -180,10 +180,51 @@ class Game
     {
         static $zones = null;
         if ($zones === null)
-            $zones = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_zones WHERE `id` >= 5100 AND `parentArea` = 0 ORDER BY `name_loc0`');
+            $zones = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_zones WHERE `id` >= 5100 AND `id` < ?d AND `parentArea` = 0 ORDER BY `name_loc0`', self::RO_AREA_MIN);   // ROWOW: RO areas start at RO_AREA_MIN
 
         return $zones;
     }
+
+    // ROWOW begin - Ragnarok Online content as the MergedWorlds converter numbers it (Ragnarok\ConfigurationRagnarok.cs:
+    // RO_DBCID_MAP_ID_START/END, RO_DBCID_AREATABLE_ID_START/END, RO_SQL_ITEM_TEMPLATE_ENTRY_END). Every RO map is an area of its
+    // own; sqlgen/zones lists them as zones (parentArea 0) in two categories, Midgard (the maps stitched into the Midgard world
+    // map) and the RO maps on WoW maps of their own (dungeon levels, interiors, instances)
+    public const RO_MAP_MIN          = 1500;
+    public const RO_MAP_MAX          = 2999;
+    public const RO_AREA_MIN         = 10000;
+    public const RO_AREA_MAX         = 12999;
+    public const RO_MIDGARD_MAP      = 2453;                // the stitched Midgard world map, also its zone category
+    public const RO_ZONE_CAT_WORLD   = 2453;
+    public const RO_ZONE_CAT_INDOORS = 1500;                // not a Map.dbc id
+    public const RO_ITEM_ID_MAX      = 239999;
+
+    public static function roFilterZones() : array
+    {
+        static $zones = null;
+        if ($zones === null)
+            $zones = DB::Aowow()->selectCol('SELECT `id` AS ARRAY_KEY, `name_loc0` FROM ?_zones WHERE `id` BETWEEN ?d AND ?d AND `parentArea` = 0 AND (`cuFlags` & ?d) = 0 ORDER BY `name_loc0`',
+                self::RO_AREA_MIN, self::RO_AREA_MAX, CUSTOM_EXCLUDE_FOR_LISTVIEW);
+
+        return $zones;
+    }
+
+    // item id range occupied by Ragnarok Online items: from the first item of mod_rowow_item (WoW item id <-> RO item id)
+    // to the converter's RO item range end, so the RO companion carriers (not in mod_rowow_item) count too.
+    // [min, max], or null when the mod tables are absent
+    public static function roItemIdRange() : ?array
+    {
+        static $range = false;
+        if ($range === false)
+        {
+            $range = null;
+            if (DB::World()->selectCell('SHOW TABLES LIKE "mod_rowow_item"'))
+                if ($min = DB::World()->selectCell('SELECT MIN(`ItemTemplateID`) FROM mod_rowow_item'))
+                    $range = [(int)$min, max(self::RO_ITEM_ID_MAX, (int)DB::World()->selectCell('SELECT MAX(`ItemTemplateID`) FROM mod_rowow_item'))];
+        }
+
+        return $range;
+    }
+    // ROWOW end
 
     public static function eqFilterFactions() : array
     {

@@ -1015,6 +1015,7 @@ var mn_guides = [
 var mn_tools = [
     [0,"天赋模拟器","?talent",mn_talentCalc],
     [2,"猎人宠物模拟器","?petcalc",mn_petCalc],
+    [9,"Ragnarok Character Builder","?rocalc"], // ROWOW
     [3,"物品比较","?compare"],
     [5,"Profiler","?profiler",[
         [0,"角色","?profiles"],

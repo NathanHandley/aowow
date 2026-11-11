@@ -182,6 +182,32 @@ var fi_filters = {
         { id: 113, name: 'hasscreenshots',      type: 'yn' },
         { id: 167, name: 'hasvideos',           type: 'yn' },
 
+        // ROWOW: Ragnarok Online item stats (?_ragnarok_item)
+        { id: 299, name: 'sepragnarok' },
+        { id: 322, name: 'rocategory',              type: 'rocategory' },
+        { id: 300, name: 'rostr',                   type: 'num', noweights: 1 },
+        { id: 301, name: 'roagi',                   type: 'num', noweights: 1 },
+        { id: 302, name: 'rovit',                   type: 'num', noweights: 1 },
+        { id: 303, name: 'roint',                   type: 'num', noweights: 1 },
+        { id: 304, name: 'rodex',                   type: 'num', noweights: 1 },
+        { id: 305, name: 'roluk',                   type: 'num', noweights: 1 },
+        { id: 306, name: 'roatk',                   type: 'num', noweights: 1 },
+        { id: 307, name: 'romatk',                  type: 'num', noweights: 1 },
+        { id: 308, name: 'romatkrate',              type: 'num', noweights: 1 },
+        { id: 309, name: 'rodef',                   type: 'num', noweights: 1 },
+        { id: 310, name: 'romdef',                  type: 'num', noweights: 1 },
+        { id: 315, name: 'rohit',                   type: 'num', noweights: 1 },
+        { id: 316, name: 'roflee',                  type: 'num', noweights: 1 },
+        { id: 317, name: 'rocrit',                  type: 'num', noweights: 1 },
+        { id: 318, name: 'romaxhp',                 type: 'num', noweights: 1 },
+        { id: 319, name: 'romaxsp',                 type: 'num', noweights: 1 },
+        { id: 320, name: 'roaspd',                  type: 'num', noweights: 1 },
+        { id: 311, name: 'roslots',                 type: 'num', noweights: 1 },
+        { id: 312, name: 'roweaponlevel',           type: 'num', noweights: 1 },
+        { id: 313, name: 'roweight',                type: 'num', noweights: 1 },
+        { id: 314, name: 'roequiplevel',            type: 'num', noweights: 1 },
+        { id: 321, name: 'rorefineable',            type: 'yn' },
+
         { id: 1,   name: 'sepstaffonly',                       staffonly: true },
         { id: 176, name: 'flags',               type: 'flags', staffonly: true },
         { id: 177, name: 'flags2',              type: 'flags', staffonly: true }
@@ -1879,7 +1905,7 @@ function fi_getExtraCols(wt, gm, pu) {
             // Fix display of money columns
             if (/money|price|cost/i.test(a.name)) {
                 b.compute = function (item, td) {
-                    td.innerHTML = g_getMoneyHtml(item[a.name] || 0);
+                    td.innerHTML = item.zeny ? g_getZenyHtml(item[a.name] || 0) : g_getMoneyHtml(item[a.name] || 0); // ROWOW: zeny for Ragnarok items
                 }
             }
 
