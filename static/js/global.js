@@ -17890,9 +17890,16 @@ var Menu = new function()
 
     function sortMenu(menu)
     {
+        // MergedWorlds: an item may sort by opt.sortName (Database > Character keeps Warcraft Classes, EverQuest Classes and
+        // Ragnarok Jobs together where "Classes" was)
+        var sortName = function(menuItem)
+        {
+            return (menuItem[MENU_IDX_OPT] && menuItem[MENU_IDX_OPT].sortName) || menuItem[MENU_IDX_NAME];
+        };
+
         menu.sort(function(a, b)
         {
-            return $WH.strcmp(a[MENU_IDX_NAME], b[MENU_IDX_NAME]);
+            return $WH.strcmp(sortName(a), sortName(b));
         });
     }
 
@@ -18032,11 +18039,123 @@ var Menu = new function()
     }
 };
 
+// MergedWorlds: Database > Items by game of origin. The locale file's mn_items holds the WoW categories; this turns it into
+//   All Items                     ?items                - the Ragnarok group, the EQ Classes group, the WoW categories
+//   Warcraft and EverQuest Items  ?items&filter=eqi=4   - the WoW categories
+//   Warcraft Items                ?items&filter=eqi=2   - the WoW categories
+//   EverQuest Items               ?items&filter=eqi=1   - the WoW categories, By Class (EQ classes)
+//   Ragnarok Items                ?items&filter=eqi=3   - the Ragnarok Online categories (filter cr=322), By Job
+// Menu ids (also the breadcrumb paths pages/items.php and pages/item.php build): game = eqi (0 all), then the category path
+// as before; Ragnarok: 100 Weapons > RO category, or the RO category; 200 By Job > job id; EQ: 201 By Class > EQ class id;
+// in All Items 300 Ragnarok > (as Ragnarok Items) and 301 EQ Classes > EQ class id.
+function g_mwBuildItemMenus()
+{
+    if (typeof mn_items_mw == 'undefined' || mn_items.mwBuilt)
+        return;
+
+    var L = mn_items_mw;
+
+    var addFilter = function(url, f)
+    {
+        if (!f || !url || typeof url != 'string')
+            return url;
+
+        return url + (url.indexOf('filter=') != -1 ? ';' : '&filter=') + f;
+    };
+
+    var copy = function(menu)
+    {
+        return $.map(menu, function(menuItem)
+        {
+            var c = menuItem.slice(0);
+            if (c[MENU_IDX_SUB])
+                c[MENU_IDX_SUB] = copy(c[MENU_IDX_SUB]);
+            if (c[MENU_IDX_OPT])
+                c[MENU_IDX_OPT] = $.extend({}, c[MENU_IDX_OPT]);
+            return [c];
+        });
+    };
+
+    // as Menu.fixUrls(menu, '?items=') did, plus the game's filter
+    var fixWow = function(menu, path, f)
+    {
+        $.each(menu, function(idx, menuItem)
+        {
+            if (!menuItem)
+                return;
+
+            var p = path;
+            if (menuItem[MENU_IDX_ID] != null)
+            {
+                p = path.concat([menuItem[MENU_IDX_ID]]);
+                if (menuItem[MENU_IDX_URL] == null)
+                    menuItem[MENU_IDX_URL] = '?items=' + p.join('.');
+            }
+
+            menuItem[MENU_IDX_URL] = addFilter(menuItem[MENU_IDX_URL], f);
+
+            if (menuItem[MENU_IDX_SUB])
+                fixWow(menuItem[MENU_IDX_SUB], p, f);
+        });
+
+        return menu;
+    };
+
+    var wow = function(f) { return fixWow(copy(mn_items), [], f); };
+
+    var eq = function(f)
+    {
+        return $.map(mn_eqclasses, function(c)
+        {
+            return [[c[MENU_IDX_ID], c[MENU_IDX_NAME], addFilter('?items&filter=ubr=1.0.' + c[MENU_IDX_ID], f), null, $.extend({}, c[MENU_IDX_OPT])]];
+        });
+    };
+
+    var ro = function(f)
+    {
+        var url = function(cat) { return addFilter('?items&filter=cr=322;crs=' + cat + ';crv=0', f); };
+
+        var menu = $.map(L.ro, function(r)
+        {
+            if (r[0] == null)
+                return [[, r[1]]];                          // heading
+
+            var menuItem = [r[0], r[1], url(r[0])];
+            if (r[2])
+                menuItem[MENU_IDX_SUB] = $.map(r[2], function(s) { return [[s[0], s[1], url(s[0])]]; });
+
+            return [menuItem];
+        });
+
+        if (typeof mn_rojobs != 'undefined')
+            menu.push([200, L.byJob, null, $.map(mn_rojobs, function(j)
+            {
+                return j[MENU_IDX_ID] == null ? [[, j[MENU_IDX_NAME]]] : [[j[MENU_IDX_ID], j[MENU_IDX_NAME], addFilter('?items&filter=ubr=3.0.' + j[MENU_IDX_ID], f)]];
+            })]);
+
+        return menu;
+    };
+
+    var games = [
+        [0, L.games[0], '?items',             [[300, L.ragnarok, null, ro('')], [301, L.eqClasses, null, eq('')]].concat(wow(''))],
+        [4, L.games[4], '?items&filter=eqi=4', wow('eqi=4')],
+        [2, L.games[2], '?items&filter=eqi=2', wow('eqi=2')],
+        [1, L.games[1], '?items&filter=eqi=1', wow('eqi=1').concat([[201, L.byClass, null, eq('eqi=1')]])],
+        [3, L.games[3], '?items&filter=eqi=3', ro('eqi=3')]
+    ];
+
+    mn_items.splice.apply(mn_items, [0, mn_items.length].concat(games));  // in place: mn_database holds this array
+    mn_items.mwBuilt = true;
+}
+
+g_mwBuildItemMenus();
+
 Menu.fixUrls(mn_achievements, '?achievements=');
 Menu.fixUrls(mn_classes, '?class=');
 Menu.fixUrls(mn_currencies, '?currencies=');
 Menu.fixUrls(mn_factions, '?factions=');
-Menu.fixUrls(mn_items, '?items=');
+if (typeof mn_items_mw == 'undefined')                      // MergedWorlds: else g_mwBuildItemMenus set the URLs
+    Menu.fixUrls(mn_items, '?items=');
 Menu.fixUrls(mn_itemSets, '?itemsets&filter=cl=', { hash: '0-2+1' });
 Menu.fixUrls(mn_npcs, '?npcs=');
 Menu.fixUrls(mn_objects, '?objects=');
@@ -18055,8 +18174,7 @@ $(document).ready(function() // Locale is only known later
 
     Menu.sort(mn_classes);
     Menu.sort(mn_database);
-    Menu.sortSubmenus(mn_items,
-    [
+    var itemSubmenus = [
         [4, 1], // Armor > Cloth
         [4, 2], // Armor > Leather
         [4, 3], // Armor > Mail
@@ -18067,7 +18185,10 @@ $(document).ready(function() // Locale is only known later
         [7],    // Trade Goods
         [6],    // Projectiles
         [9]     // Recipes
-    ]);
+    ];
+    if (mn_items.mwBuilt)                                   // MergedWorlds: the WoW categories are under each game of origin
+        itemSubmenus = $.map([0, 4, 2, 1], function(game) { return $.map(itemSubmenus, function(p) { return [[game].concat(p)]; }); });
+    Menu.sortSubmenus(mn_items, itemSubmenus);
     Menu.sort(mn_itemSets);
     Menu.sort(mn_npcs);
     Menu.sort(mn_objects);

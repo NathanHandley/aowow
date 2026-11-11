@@ -11,6 +11,16 @@ $f = $this->filter;                                         // shorthand
 $this->brick('announcement');
 
 $this->brick('pageTemplate', ['fi' => empty($f['query']) ? null : ['query' => $f['query'], 'menuItem' => 0]]);
+
+// MergedWorlds: the menu links carry the active filter; under Items > All Items they don't carry its game of origin (eqi)
+if (!empty($f['query']) && preg_match('/(^|;)eqi=/', $f['query'])):
+    $allQuery = trim(preg_replace('/(^|;)eqi=[^;]*/', '', $f['query']), ';');
+?>
+            <script type="text/javascript">//<![CDATA[
+                Menu.modifyUrl(Menu.findItem(mn_database, [0, 0]), <?=($allQuery !== '' ? "{ filter: '+=".Util::jsEscape($allQuery)."' }" : '{}'); ?>, <?=($allQuery !== '' ? '{ onAppendCollision: fi_mergeFilterParams, onAppendEmpty: fi_setFilterParams, menuUrl: Menu.getItemUrl(Menu.findItem(mn_database, [0])) }' : '{}'); ?>);
+            //]]></script>
+<?php
+endif;
 ?>
 
             <div id="fi" style="display: <?=(empty($f['query']) ? 'none' : 'block'); ?>;">
@@ -87,49 +97,60 @@ if (!empty($f['type'])):
                             </td>
                             <td></td>
                         </tr><tr>
-                            <td class="padded"><?=Lang::item('usableBy').Lang::main('colon'); ?></td>
-                            <td class="padded">&nbsp;<select name="si" style="margin-right: 0.5em">
-                                <option></option>
+                            <!-- MergedWorlds: "Usable by" rows - [game] [faction (blank / World of Warcraft only)] [class or job], AND / OR between rows (filters.js fi_initUsableBy, ItemListFilter ubr) -->
+                            <td class="padded" style="vertical-align: top"><?=Lang::item('usableBy').Lang::main('colon'); ?></td>
+                            <td class="padded" colspan="2"><div id="fi_usableby"></div></td>
 <?php
-foreach (Lang::game('si') as $k => $str):
-    echo '                            <option value="'.$k.'"'.(isset($f['si']) && $k == $f['si'] ? ' selected' : null).'>'.$str."</option>\n";
-endforeach;
-?>
-                            </select></td>
-                            <td class="padded">
-                                &nbsp;<select name="ub">
-                                    <option></option>
-<?php
+$ubClasses = [ItemListFilter::UB_GAME_ANY => [], ItemListFilter::UB_GAME_WOW => [], ItemListFilter::UB_GAME_EQ => [], ItemListFilter::UB_GAME_RO => []];
 $eqPrimary = Game::eqPrimaryClasses();              // EQWOW: every WoW class is also its primary EQ class
 foreach (Lang::game('cl') as $k => $str):
-    if ($str):
-        if (isset($eqPrimary[$k]) && ($eqName = Lang::game('eqcl', $eqPrimary[$k])))
-            $str = 'WoW '.$str.' (+EQ '.$eqName.')'; // EQWOW
-        echo '                            <option value="'.$k.'"'.(isset($f['ub']) && $k == $f['ub'] ? ' selected' : null).'>'.$str."</option>\n";
+    if (!$str):
+        continue;
     endif;
+    $ubClasses[ItemListFilter::UB_GAME_WOW][] = [$k, $str];
+    $ubClasses[ItemListFilter::UB_GAME_ANY][] = [$k, isset($eqPrimary[$k]) && ($eqName = Lang::game('eqcl', $eqPrimary[$k])) ? sprintf(Lang::item('ubPlusEq'), $str, $eqName) : $str];
 endforeach;
-?>
-                                </select></td>
-                            </td>
-                        </tr><tr>
-                            <!-- EQWOW: filter by EQ class (AllowedEQClassMask from the EQWOW mod) -->
-                            <td class="padded"><?=Lang::item('usableByEQ').Lang::main('colon'); ?></td>
-                            <td class="padded" colspan="2">
-                                <!-- EQWOW: connector to "Usable by" - OR: either character; AND: one character that is both -->
-                                &nbsp;<select name="ubop" style="margin-right: 0.5em">
-                                    <option value=""<?=(!isset($f['ubop']) ? ' selected' : null); ?>>OR</option>
-                                    <option value="1"<?=(isset($f['ubop']) ? ' selected' : null); ?>>AND</option>
-                                </select>
-                                <select name="ubeq">
-                                    <option></option>
-<?php
 foreach (Lang::game('eqcl') as $k => $str):
     if ($str):
-        echo '                            <option value="'.$k.'"'.(isset($f['ubeq']) && $k == $f['ubeq'] ? ' selected' : null).'>'.$str."</option>\n";
+        $ubClasses[ItemListFilter::UB_GAME_EQ][] = [$k, $str];
     endif;
 endforeach;
+$roTier = null;
+foreach (Ragnarok::jobs() as $k => $job):          // ROWOW: grouped by tier (item_db Jobs / Classes of the RO equipment)
+    if ($job['itemJobIdx'] < 0):
+        continue;
+    endif;
+    if ($roTier !== $job['tier']):
+        $ubClasses[ItemListFilter::UB_GAME_RO][] = [Ragnarok::JOB_TIERS[$job['tier']], []];
+        $roTier = $job['tier'];
+    endif;
+    $ubClasses[ItemListFilter::UB_GAME_RO][count($ubClasses[ItemListFilter::UB_GAME_RO]) - 1][1][] = [$k, $job['displayName']];
+endforeach;
+
+$ubGames = [[ItemListFilter::UB_GAME_ANY, '']];
+foreach ([ItemListFilter::UB_GAME_EQ, ItemListFilter::UB_GAME_WOW, ItemListFilter::UB_GAME_RO] as $g):
+    $ubGames[] = [$g, Lang::item('eqOrigin', $g)];
+endforeach;
+$ubSides = [];
+foreach (Lang::game('si') as $k => $str):
+    if ($str):
+        $ubSides[] = [$k, $str];
+    endif;
+endforeach;
+
+$ubInit = array(
+    'games'   => $ubGames,
+    'sides'   => $ubSides,
+    'classes' => $ubClasses,
+    'sideGames' => [ItemListFilter::UB_GAME_ANY, ItemListFilter::UB_GAME_WOW],
+    'rows'    => $f['ubRows'] ?? [],
+    'max'     => ItemListFilter::UB_MAX_ROWS,
+    'lang'    => ['and' => Lang::item('ubAnd'), 'or' => Lang::item('ubOr'), 'add' => Lang::item('ubAddRow'), 'remove' => Lang::item('ubRemoveRow'), 'hint' => Lang::item('ubHint')]
+);
 ?>
-                                </select></td>
+                            <script type="text/javascript">//<![CDATA[
+                                fi_initUsableBy(<?=Util::toJSON($ubInit); ?>);
+                            //]]></script>
                         </tr><tr>
                             <!-- EQWOW: filter by item origin (EverQuest item id range from mod_everquest_systemconfigs) -->
                             <td class="padded"><?=Lang::item('itemOrigin').Lang::main('colon'); ?></td>
@@ -144,31 +165,6 @@ foreach (Lang::item('eqOrigin') as $k => $str):
 endforeach;
 ?>
                                 </select></td>
-<?php if ($roJobs = Ragnarok::jobs()): ?>
-                        </tr><tr>
-                            <!-- ROWOW: filter by Ragnarok job (item_db Jobs / Classes of the RO equipment) -->
-                            <td class="padded">Usable by RO job<?=Lang::main('colon'); ?></td>
-                            <td class="padded" colspan="2">
-                                &nbsp;<select name="ubro">
-                                    <option></option>
-<?php
-    $roTier = null;
-    foreach ($roJobs as $k => $job):
-        if ($job['itemJobIdx'] < 0):
-            continue;
-        endif;
-        if ($roTier !== $job['tier']):
-            echo ($roTier !== null ? "                                    </optgroup>\n" : '').'                                    <optgroup label="'.Ragnarok::JOB_TIERS[$job['tier']].'">'."\n";
-            $roTier = $job['tier'];
-        endif;
-        echo '                            <option value="'.$k.'"'.(isset($f['ubro']) && $k == $f['ubro'] ? ' selected' : null).'>'.htmlspecialchars($job['displayName'])."</option>\n";
-    endforeach;
-    if ($roTier !== null):
-        echo "                                    </optgroup>\n";
-    endif;
-?>
-                                </select></td>
-<?php endif; ?>
                         </tr>
                     </table>
 

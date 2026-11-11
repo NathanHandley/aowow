@@ -65,7 +65,7 @@ class RagnarokjobsPage extends GenericPage
                   '<td>'.($j['maxBaseLevel'] ?: '').'</td>'.
                   '<td>'.($j['maxJobLevel'] ?: '').'</td>'.
                   '<td>'.(!empty($skillCounts[$id]) && $j['tier'] != 6 ? '<a href="?spells=-16.'.$id.'">'.$skillCounts[$id].'</a>' : (!empty($skillCounts[$id]) ? $skillCounts[$id] : '')).'</td>'.
-                  '<td>'.($j['itemJobIdx'] >= 0 ? '<a href="?items&filter=ubro='.$id.'">Usable items</a>' : '').'</td>'.
+                  '<td>'.($j['itemJobIdx'] >= 0 ? '<a href="?items&filter=ubr=3.0.'.$id.'">Usable items</a>' : '').'</td>'.
                   '</tr>';
         }
         $h .= '</tbody></table>';

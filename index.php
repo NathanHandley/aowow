@@ -40,6 +40,8 @@ switch ($pageCall)
     case 'enchantments':
     case 'event':
     case 'events':
+    case 'everquest-class':                                 // MergedWorlds - EverQuest class
+    case 'everquest-classes':                               // MergedWorlds - EverQuest classes list
     case 'faction':
     case 'factions':
     case 'guide':

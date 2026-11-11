@@ -773,6 +773,8 @@ function fi_reset(_this) {
         }
     }
 
+    fi_resetUsableBy();                                     // MergedWorlds: back to one empty "Usable by" row
+
     return false;
 }
 
@@ -2096,4 +2098,218 @@ function fi_filterJsonToParam(json) {
     });
 
     return result;
+}
+
+// MergedWorlds: the "Usable by" rows of the item filter (template/pages/items.tpl.php, ItemListFilter 'ubr')
+// row: [game] [faction - blank and World of Warcraft only] [class or job of that game] [AND / OR to the next row, not on the last row]
+// each row posts one ubr[] token <game>.<side>.<class>[.<a|o>]; a row without class and faction posts nothing
+var fi_usableBy = null;
+
+function fi_initUsableBy(opt) {
+    var c = $WH.ge('fi_usableby');
+    if (!c) {
+        return;
+    }
+
+    fi_usableBy = { opt: opt, rows: [], list: $WH.ce('div'), add: $WH.ce('a') };
+
+    $WH.ae(c, fi_usableBy.list);
+
+    var d = $WH.ce('div');
+    fi_usableBy.add.href = 'javascript:;';
+    fi_usableBy.add.onclick = function() { fi_addUsableByRow(null); fi_updateUsableBy(); return false; };
+    $WH.ae(fi_usableBy.add, $WH.ct(opt.lang.add));
+    $WH.ae(d, fi_usableBy.add);
+
+    var h = $WH.ce('small');
+    h.className = 'q0';
+    h.style.marginLeft = '1em';
+    $WH.ae(h, $WH.ct(opt.lang.hint));
+    $WH.ae(d, h);
+    fi_usableBy.hint = h;
+    $WH.ae(c, d);
+
+    if (opt.rows && opt.rows.length) {
+        for (var i = 0; i < opt.rows.length; ++i) {
+            fi_addUsableByRow(opt.rows[i]);
+        }
+    }
+    else {
+        fi_addUsableByRow(null);
+    }
+
+    fi_updateUsableBy();
+}
+
+function fi_addUsableByRow(data) {
+    var ub = fi_usableBy;
+    if (!ub || ub.rows.length >= ub.opt.max) {
+        return;
+    }
+
+    // data: [game, side, class or null, 'a' | 'o']
+    data = data || [0, 0, null, 'o'];
+
+    var row = {
+        div:   $WH.ce('div'),
+        game:  $WH.ce('select'),
+        side:  $WH.ce('select'),
+        cls:   $WH.ce('select'),
+        op:    $WH.ce('select'),
+        input: $WH.ce('input'),
+        del:   $WH.ce('a')
+    };
+
+    row.div.style.marginBottom = '3px';
+
+    $.each(ub.opt.games, function(idx, g) {
+        var o = $WH.ce('option');
+        o.value = g[0] ? g[0] : '';                         // blank game: '' (fi_submit counts a set select as a criterion)
+        $WH.ae(o, $WH.ct(g[1]));
+        $WH.ae(row.game, o);
+    });
+    row.game.value = data[0] ? String(data[0]) : '';
+
+    $WH.ae(row.side, $WH.ce('option'));
+    $.each(ub.opt.sides, function(idx, s) {
+        var o = $WH.ce('option');
+        o.value = s[0];
+        $WH.ae(o, $WH.ct(s[1]));
+        $WH.ae(row.side, o);
+    });
+    row.side.value = data[1] ? String(data[1]) : '';
+
+    $.each([['o', ub.opt.lang.or], ['a', ub.opt.lang.and]], function(idx, op) {
+        var o = $WH.ce('option');
+        o.value = op[0];
+        $WH.ae(o, $WH.ct(op[1]));
+        $WH.ae(row.op, o);
+    });
+    row.op.value = data[3] == 'a' ? 'a' : 'o';
+
+    row.input.type = 'hidden';
+    row.input.name = 'ubr[]';
+
+    row.del.href = 'javascript:;';
+    row.del.className = 'icon-delete';
+    row.del.title = ub.opt.lang.remove;
+    row.del.style.marginLeft = '0.5em';
+    $WH.ae(row.del, $WH.ct(' '));
+    row.del.onclick = function() { fi_removeUsableByRow(row); return false; };
+
+    row.game.style.marginRight = row.side.style.marginRight = row.cls.style.marginRight = '0.5em';
+
+    fi_fillUsableByClasses(row, data[2]);
+
+    row.game.onchange = function() { fi_fillUsableByClasses(row, null); fi_updateUsableBy(); };
+    row.side.onchange = row.cls.onchange = row.op.onchange = fi_updateUsableBy;
+
+    $WH.ae(row.div, $WH.ct(String.fromCharCode(160)));
+    $WH.ae(row.div, row.game);
+    $WH.ae(row.div, row.side);
+    $WH.ae(row.div, row.cls);
+    $WH.ae(row.div, row.op);
+    $WH.ae(row.div, row.del);
+    $WH.ae(row.div, row.input);
+
+    $WH.ae(ub.list, row.div);
+    ub.rows.push(row);
+}
+
+function fi_fillUsableByClasses(row, selected) {
+    var
+        ub   = fi_usableBy,
+        game = parseInt(row.game.value) || 0,
+        list = ub.opt.classes[game] || [];
+
+    while (row.cls.firstChild) {
+        $WH.de(row.cls.firstChild);
+    }
+
+    $WH.ae(row.cls, $WH.ce('option'));
+
+    var addOption = function(dest, c) {
+        var o = $WH.ce('option');
+        o.value = c[0];
+        $WH.ae(o, $WH.ct(c[1]));
+        $WH.ae(dest, o);
+    };
+
+    $.each(list, function(idx, c) {
+        if ($.isArray(c[1])) {                              // ROWOW: jobs grouped by tier
+            var g = $WH.ce('optgroup');
+            g.label = c[0];
+            $.each(c[1], function(idx, j) { addOption(g, j); });
+            $WH.ae(row.cls, g);
+        }
+        else {
+            addOption(row.cls, c);
+        }
+    });
+
+    row.cls.value = (selected !== null && selected !== undefined) ? String(selected) : '';
+    if (row.cls.selectedIndex < 0) {
+        row.cls.selectedIndex = 0;
+    }
+
+    var withSide = $WH.in_array(ub.opt.sideGames, game) != -1;
+    row.side.style.display = withSide ? '' : 'none';
+    if (!withSide) {
+        row.side.selectedIndex = 0;
+    }
+}
+
+function fi_removeUsableByRow(row) {
+    var ub = fi_usableBy;
+    var pos = $WH.in_array(ub.rows, row);
+    if (pos == -1) {
+        return;
+    }
+
+    $WH.de(row.div);
+    ub.rows.splice(pos, 1);
+
+    if (!ub.rows.length) {
+        fi_addUsableByRow(null);
+    }
+
+    fi_updateUsableBy();
+}
+
+function fi_updateUsableBy() {
+    var ub = fi_usableBy;
+    if (!ub) {
+        return;
+    }
+
+    for (var i = 0; i < ub.rows.length; ++i) {
+        var
+            row  = ub.rows[i],
+            last = (i == ub.rows.length - 1),
+            game = parseInt(row.game.value) || 0,
+            side = row.side.style.display == 'none' ? 0 : (parseInt(row.side.value) || 0),
+            cls  = row.cls.value;
+
+        row.op.style.display  = last ? 'none' : '';
+        row.del.style.display = ub.rows.length > 1 ? '' : 'none';
+
+        row.input.value = (cls === '' && !side) ? '' : game + '.' + side + '.' + cls + (last ? '' : '.' + row.op.value);
+    }
+
+    ub.add.style.display  = ub.rows.length < ub.opt.max ? '' : 'none';
+    ub.hint.style.display = ub.rows.length > 2 ? '' : 'none';
+}
+
+function fi_resetUsableBy() {
+    var ub = fi_usableBy;
+    if (!ub) {
+        return;
+    }
+
+    while (ub.rows.length) {
+        $WH.de(ub.rows.pop().div);
+    }
+
+    fi_addUsableByRow(null);
+    fi_updateUsableBy();
 }

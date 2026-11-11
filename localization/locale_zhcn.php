@@ -392,6 +392,25 @@ $lang = array(
         'dt'            => [null, "魔法", "诅咒", "疾病", "中毒", "潜行", "隐形", "魔法, 诅咒, 疾病, 中毒", "法术 (NPC)", "激怒"],
         'sc'            => ["物理", "神圣", "火焰", "自然", "冰霜", "暗影", "奥术"],
         'cl'            => [null, "战士", "圣骑士", "猎人", "潜行者", "牧师", "死亡骑士", "萨满祭司", "法师", "术士", null, "德鲁伊"],
+        'eqcl'          => [null, "Warrior", "Cleric", "Paladin", "Ranger", "Shadow Knight", "Druid", "Monk", "Bard", "Rogue", "Shaman", "Necromancer", "Wizard", "Magician", "Enchanter"], // EQWOW: EQ classes (server ids 1-14, mask bit = 1 << (id - 1))
+        'eqClass'       => "EQ class",                      // EQWOW
+        'eqLearnLevel'  => "EQ learn level",                // EQWOW
+        'eqClasses'     => "EverQuest Classes",             // MergedWorlds: ?everquest-classes, ?everquest-class=<id>
+        'eqClassPage'   => array(                           // MergedWorlds
+            'class'      => "EverQuest Class",
+            'notFound'   => "This EverQuest class doesn't exist.",
+            'intro'      => "The EverQuest classes as MergedWorlds plays them. Every WoW class is also its primary EverQuest class, and can take a second EverQuest class.",
+            'eqClass'    => "EQ class",
+            'primaryOf'  => "Primary EQ class of",
+            'secondOf'   => "Default second EQ class of",
+            'eligibleOf' => "Can be the second EQ class of",
+            'items'      => "Usable items",
+            'spells'     => "Spells",
+            'allItems'   => "all usable items",
+            'allSpells'  => "all spells",
+            'id'         => "EQ class id",
+            'none'       => "None"
+        ),
         'ra'            => [-2 => "部落", -1 => "联盟", null, "人类", "兽人", "矮人", "暗夜精灵", "亡灵", "牛头人", "侏儒", "巨魔", null, "血精灵", "德莱尼"],
         'rep'           => ["仇恨", "敌对", "冷淡", "中立", "友善", "尊敬", "崇敬", "崇拜"],
         'st'            => array(
@@ -1858,6 +1877,14 @@ $lang = array(
         'slot'          => "装备部位",
         '_quality'      => "品质",
         'usableBy'      => "可用职业",
+        'itemOrigin'    => "Game of origin",                // EQWOW
+        'eqOrigin'      => [null, "EverQuest", "World of Warcraft", "Ragnarok Online", "World of Warcraft and EverQuest"], // EQWOW - indexes match filter values 1 / 2 (ROWOW: 3, MergedWorlds: 4)
+        'ubPlusEq'      => "%s (+EQ %s)",                   // MergedWorlds: "Usable by" row, blank game: the WoW class and its primary EQ class
+        'ubAnd'         => "AND",                           // MergedWorlds: "Usable by" row connectors
+        'ubOr'          => "OR",
+        'ubAddRow'      => "Add a class",
+        'ubRemoveRow'   => "Remove",
+        'ubHint'        => "AND is applied before OR.",
         'buyout'        => "一口价",
         'each'          => "每个",
         'tabOther'      => "其他",

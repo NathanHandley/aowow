@@ -1557,6 +1557,10 @@ class SpellList extends BaseType
         // colors
         $data = preg_replace('/\|cff([a-f0-9]{6})(.+?)\|r/i', '<span style="color: #$1;">$2</span>', $data);
 
+        // MergedWorlds: converter descriptions (RO skill descriptions from the RO client) - client line breaks (|n), RO colour codes
+        // (^RRGGBB, ^000000 = back to the default colour) and colour codes left without their |r
+        $data = self::htmlizeConverterCodes($data);
+
         // line endings
         $data = strtr($data, ["\r" => '', "\n" => '<br />']);
 
@@ -1564,6 +1568,47 @@ class SpellList extends BaseType
         $this->parsedText[$this->id][$type][Lang::getLocale()->value][$this->charLevel][(int)$this->interactive] = [$data, $relSpells, $this->scaling[$this->id]];
 
         return [$data, $relSpells, $this->scaling[$this->id]];
+    }
+
+    // MergedWorlds: see parseText step 6
+    private static function htmlizeConverterCodes(string $data) : string
+    {
+        $data = str_replace(['|n', '|N'], "\n", $data);
+
+        if (preg_match('/\^[0-9a-f]{6}/i', $data))
+        {
+            $out  = '';
+            $open = false;
+            foreach (preg_split('/(\^[0-9a-f]{6})/i', $data, -1, PREG_SPLIT_DELIM_CAPTURE) as $part)
+            {
+                if (!preg_match('/^\^([0-9a-f]{6})$/i', $part, $m))
+                {
+                    $out .= $part;
+                    continue;
+                }
+
+                if ($open)
+                    $out .= '</span>';
+
+                $open = strcasecmp($m[1], '000000') != 0;
+                if ($open)
+                    $out .= '<span style="color: #'.$m[1].';">';
+            }
+
+            $data = $out.($open ? '</span>' : '');
+        }
+
+        // what the first replacement left: a colour start without its end, or an end without its start
+        $data = preg_replace('/\|c[0-9a-f]{8}|\|r/i', '', $data);
+
+        // RO text colours are made for a light window (^0000FF, ^777777): lighten dark ones for the dark tooltip
+        return preg_replace_callback('/<span style="color: #([0-9a-f]{6});">/i', function ($m) {
+            [$r, $g, $b] = array_map('hexdec', str_split($m[1], 2));
+            if ((0.299 * $r + 0.587 * $g + 0.114 * $b) / 255 >= 0.5)
+                return $m[0];
+
+            return sprintf('<span style="color: #%02X%02X%02X;">', $r + intdiv(255 - $r, 2), $g + intdiv(255 - $g, 2), $b + intdiv(255 - $b, 2));
+        }, $data);
     }
 
     private function handleFormulas($data, $topLevel = false)

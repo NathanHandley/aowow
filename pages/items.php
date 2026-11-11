@@ -470,15 +470,52 @@ class ItemsPage extends GenericPage
 
     protected function generatePath()
     {
+        $form = $this->filterObj->getForm();
+
+        // MergedWorlds: Items > game of origin (menu id = the eqi filter value, 0: All Items; static/js/global.js g_mwBuildItemMenus)
+        $game = (int)($form['eqi'] ?? 0);
+        $this->path[] = $game;
+
+        // .. the Ragnarok categories and jobs and the EQ classes have no WoW category
+        if (!$this->category && ($_ = $this->mwMenuPath($game, $form)))
+        {
+            $this->path = array_merge($this->path, $_);
+            return;
+        }
+
         foreach ($this->category as $c)
             $this->path[] = $c;
 
         // if slot-dropdown is available && Armor && $path points to Armor-Class
-        $form = $this->filterObj->getForm();
-        if (count($this->path) == 4 && $this->category[0] == 4 && isset($form['sl']) && count($form['sl']) == 1)
+        if (count($this->path) == 5 && $this->category[0] == 4 && isset($form['sl']) && count($form['sl']) == 1)
             $this->path[] = $form['sl'][0];
         else if (isset($this->category[0]) && $this->category[0] == 0 && isset($form['ty']) && count($form['ty']) == 1)
             $this->path[] = $form['ty'][0];
+    }
+
+    // MergedWorlds: menu path below the game for ?items&filter=cr=322;crs=<RO category>, a single "Usable by" RO job or EQ class row
+    private function mwMenuPath(int $game, array $form) : array
+    {
+        $sc = $this->filterObj->getSetCriteria();
+        $cr = array_values($sc['cr'] ?? []);
+        if (count($cr) == 1 && $cr[0] == 322 && in_array($game, [0, 3]))
+        {
+            $cat  = (int)array_values($sc['crs'])[0];
+            $path = $cat == Ragnarok::CATEGORY_ANY_WEAPON ? [100] : ($cat >= 1 && $cat <= 22 ? [100, $cat] : [$cat]);
+            return $game ? $path : array_merge([300], $path);
+        }
+
+        $rows = $form['ubRows'] ?? [];
+        if (count($rows) == 1 && $rows[0][2] !== null && !$rows[0][1])
+        {
+            if ($rows[0][0] == ItemListFilter::UB_GAME_RO && in_array($game, [0, 3]))
+                return $game ? [200, $rows[0][2]] : [300, 200, $rows[0][2]];
+
+            if ($rows[0][0] == ItemListFilter::UB_GAME_EQ && in_array($game, [0, 1]))
+                return $game ? [201, $rows[0][2]] : [301, $rows[0][2]];
+        }
+
+        return [];
     }
 
     // fetch best possible gems for chosen weights

@@ -37,6 +37,9 @@ class Ragnarok
         45 => 'Pet Egg',        46 => 'Pet Armor',       47 => 'Miscellaneous',   48 => 'Cash Shop Item'
     );
 
+    // MergedWorlds: item filter cr=322 value for every weapon category (1 - 22), the Items > Ragnarok Items > Weapons menu
+    public const CATEGORY_ANY_WEAPON = 100;
+
     private const LOCATIONS = array(
         'Head_Top' => 'Upper Headgear', 'Head_Mid' => 'Middle Headgear', 'Head_Low' => 'Lower Headgear', 'Armor' => 'Body Armor',
         'Right_Hand' => 'Weapon', 'Left_Hand' => 'Shield', 'Both_Hand' => 'Two-Handed Weapon', 'Garment' => 'Garment', 'Shoes' => 'Footgear',

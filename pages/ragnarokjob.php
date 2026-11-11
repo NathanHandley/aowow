@@ -158,7 +158,7 @@ class RagnarokjobPage extends GenericPage
         if ($j['itemJobIdx'] >= 0)
         {
             $cls = $j['itemClass'] == Ragnarok::ITEM_CLASS_UPPER ? ' (transcendent)' : ($j['itemClass'] == Ragnarok::ITEM_CLASS_BABY ? ' (baby)' : '');
-            $rows[] = ['Uses the items of', Ragnarok::ITEM_JOB_NAMES[$j['itemJobIdx']].$cls.' &ndash; <a href="?items&filter=ubro='.$this->jobId.'">all usable items</a>'];
+            $rows[] = ['Uses the items of', Ragnarok::ITEM_JOB_NAMES[$j['itemJobIdx']].$cls.' &ndash; <a href="?items&filter=ubr=3.0.'.$this->jobId.'">all usable items</a>'];
         }
         if ($j['tier'] != 6)
             $rows[] = ['Skill spells', '<a href="?spells=-16.'.$this->jobId.'">all skill levels</a> (<a href="?spells=-16.'.$this->jobId.'.1">active</a>, <a href="?spells=-16.'.$this->jobId.'.2">passive</a>)'];
@@ -197,7 +197,7 @@ class RagnarokjobPage extends GenericPage
                 );
                 if ($items->getMatches() > Cfg::get('SQL_LIMIT_DEFAULT'))
                 {
-                    $tab['note']       = sprintf(Util::$filterResultString, '?items&filter=ubro='.$this->jobId);
+                    $tab['note']       = sprintf(Util::$filterResultString, '?items&filter=ubr=3.0.'.$this->jobId);
                     $tab['_truncated'] = 1;
                 }
                 $this->lvTabs[] = [ItemList::$brickFile, $tab];

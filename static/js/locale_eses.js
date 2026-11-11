@@ -77,6 +77,112 @@ var mn_races = [
     [8,"Trol",,,{tinyIcon:"race_troll_female"}],
     [5,"No-muerto",,,{tinyIcon:"race_scourge_female"}]
 ];
+// ROWOW: Ragnarok Online jobs (?ragnarok-jobs, ?ragnarok-job=<rAthena job id>)
+var mn_rojobs = [
+    [,"Novice"],
+    [0,"Novice","?ragnarok-job=0"],
+    [,"First Jobs"],
+    [1,"Swordman","?ragnarok-job=1"],
+    [2,"Mage","?ragnarok-job=2"],
+    [3,"Archer","?ragnarok-job=3"],
+    [4,"Acolyte","?ragnarok-job=4"],
+    [5,"Merchant","?ragnarok-job=5"],
+    [6,"Thief","?ragnarok-job=6"],
+    [,"Second Jobs"],
+    [7,"Knight","?ragnarok-job=7"],
+    [14,"Crusader","?ragnarok-job=14"],
+    [9,"Wizard","?ragnarok-job=9"],
+    [16,"Sage","?ragnarok-job=16"],
+    [11,"Hunter","?ragnarok-job=11"],
+    [19,"Bard","?ragnarok-job=19"],
+    [20,"Dancer","?ragnarok-job=20"],
+    [8,"Priest","?ragnarok-job=8"],
+    [15,"Monk","?ragnarok-job=15"],
+    [10,"Blacksmith","?ragnarok-job=10"],
+    [18,"Alchemist","?ragnarok-job=18"],
+    [12,"Assassin","?ragnarok-job=12"],
+    [17,"Rogue","?ragnarok-job=17"],
+    [,"Transcendent"],
+    [4001,"High Novice","?ragnarok-job=4001"],
+    [4002,"High Swordman","?ragnarok-job=4002"],
+    [4003,"High Mage","?ragnarok-job=4003"],
+    [4004,"High Archer","?ragnarok-job=4004"],
+    [4005,"High Acolyte","?ragnarok-job=4005"],
+    [4006,"High Merchant","?ragnarok-job=4006"],
+    [4007,"High Thief","?ragnarok-job=4007"],
+    [4008,"Lord Knight","?ragnarok-job=4008"],
+    [4015,"Paladin","?ragnarok-job=4015"],
+    [4010,"High Wizard","?ragnarok-job=4010"],
+    [4017,"Professor","?ragnarok-job=4017"],
+    [4012,"Sniper","?ragnarok-job=4012"],
+    [4020,"Clown","?ragnarok-job=4020"],
+    [4021,"Gypsy","?ragnarok-job=4021"],
+    [4009,"High Priest","?ragnarok-job=4009"],
+    [4016,"Champion","?ragnarok-job=4016"],
+    [4011,"Whitesmith","?ragnarok-job=4011"],
+    [4019,"Creator","?ragnarok-job=4019"],
+    [4013,"Assassin Cross","?ragnarok-job=4013"],
+    [4018,"Stalker","?ragnarok-job=4018"],
+    [,"Expanded Jobs"],
+    [23,"Super Novice","?ragnarok-job=23"],
+    [24,"Gunslinger","?ragnarok-job=24"],
+    [25,"Ninja","?ragnarok-job=25"],
+    [4046,"Taekwon","?ragnarok-job=4046"],
+    [4047,"Star Gladiator","?ragnarok-job=4047"],
+    [4049,"Soul Linker","?ragnarok-job=4049"]
+];
+// MergedWorlds: EverQuest classes (?everquest-classes, ?everquest-class=<EQ class id 1-14>)
+var mn_eqclasses = [
+    [1,"Warrior","?everquest-class=1",,{className:"c1",tinyIcon:"class_warrior"}],
+    [2,"Cleric","?everquest-class=2",,{className:"c5",tinyIcon:"class_priest"}],
+    [3,"Paladin","?everquest-class=3",,{className:"c2",tinyIcon:"class_paladin"}],
+    [4,"Ranger","?everquest-class=4",,{className:"c3",tinyIcon:"class_hunter"}],
+    [5,"Shadow Knight","?everquest-class=5",,{className:"c6",tinyIcon:"class_deathknight"}],
+    [6,"Druid","?everquest-class=6",,{className:"c11",tinyIcon:"class_druid"}],
+    [7,"Monk","?everquest-class=7",,{className:"c4",tinyIcon:"class_rogue"}],
+    [8,"Bard","?everquest-class=8",,{className:"c1",tinyIcon:"class_warrior"}],
+    [9,"Rogue","?everquest-class=9",,{className:"c4",tinyIcon:"class_rogue"}],
+    [10,"Shaman","?everquest-class=10",,{className:"c7",tinyIcon:"class_shaman"}],
+    [11,"Necromancer","?everquest-class=11",,{className:"c9",tinyIcon:"class_warlock"}],
+    [12,"Wizard","?everquest-class=12",,{className:"c8",tinyIcon:"class_mage"}],
+    [13,"Magician","?everquest-class=13",,{className:"c8",tinyIcon:"class_mage"}],
+    [14,"Enchanter","?everquest-class=14",,{className:"c5",tinyIcon:"class_priest"}]
+];
+// MergedWorlds: Database > Items by game of origin - global.js (g_mwBuildItemMenus) builds mn_items from the WoW categories below
+// (mn_items), these names, the Ragnarok Online categories (?_ragnarok_item.roCategory, item filter cr=322), mn_eqclasses and mn_rojobs
+var mn_items_mw = {
+    games: {0:"All Items", 4:"Warcraft and EverQuest Items", 2:"Warcraft Items", 1:"EverQuest Items", 3:"Ragnarok Items"},
+    ragnarok: "Ragnarok",
+    eqClasses: "EQ Classes",
+    byClass: "By Class",
+    byJob: "By Job",
+    ro: [
+        [100,"Weapons",[
+            [1,"Daggers"],[2,"One-Handed Swords"],[3,"Two-Handed Swords"],[4,"One-Handed Spears"],[5,"Two-Handed Spears"],[6,"One-Handed Axes"],
+            [7,"Two-Handed Axes"],[8,"Maces"],[9,"Staves"],[22,"Two-Handed Staves"],[10,"Bows"],[11,"Knuckles"],[12,"Musical Instruments"],[13,"Whips"],
+            [14,"Books"],[15,"Katars"],[16,"Revolvers"],[17,"Rifles"],[18,"Gatling Guns"],[19,"Shotguns"],[20,"Grenade Launchers"],[21,"Huuma Shuriken"]
+        ]],
+        [30,"Upper Headgear"],
+        [31,"Middle Headgear"],
+        [32,"Lower Headgear"],
+        [33,"Armor"],
+        [34,"Shields"],
+        [35,"Garments"],
+        [36,"Footgear"],
+        [37,"Accessories"],
+        [38,"Costumes"],
+        [,"Other"],
+        [40,"Cards"],
+        [41,"Healing Items"],
+        [42,"Usable Items"],
+        [43,"Delayed Consumables"],
+        [44,"Ammunition"],
+        [45,"Pet Eggs"],
+        [46,"Pet Armor"],
+        [47,"Miscellaneous"],
+        [48,"Cash Shop Items"]
+    ]
+};
 var mn_items = [
     [2,"Armas",,[
         [,"De una mano","?items=2&filter=ty=15:13:0:4:7"],
@@ -932,7 +1038,9 @@ var mn_database = [
     [101,"Encantamientos","?enchantments",mn_enchantments],
     [, "Personaje"],
     [9,"Logros","?achievements",mn_achievements],
-    [12,"Clases","?classes",mn_classes],
+    [12,"Warcraft Classes","?classes",mn_classes,{sortName:"Clases 1"}],
+    [105,"EverQuest Classes","?everquest-classes",mn_eqclasses,{sortName:"Clases 2"}],   // MergedWorlds
+    [104,"Ragnarok Jobs","?ragnarok-jobs",mn_rojobs,{sortName:"Clases 3"}],               // ROWOW
     [100,"Emociones","?emotes",null],
     [8,"Mascotas de cazador","?pets",mn_pets],
     [14,"Profesiones y habilidades","?skills",mn_skills],

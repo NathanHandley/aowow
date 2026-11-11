@@ -2063,20 +2063,28 @@ class ItemListFilter extends Filter
         'gb'    => [parent::V_LIST,     [0, 1, 2, 3],                                    false], // search result grouping
         'na'    => [parent::V_REGEX,    parent::PATTERN_NAME,                            false], // name - only printable chars, no delimiter
         'ma'    => [parent::V_EQUAL,    1,                                               false], // match any / all filter
-        'ub'    => [parent::V_LIST,     [[1, 9], 11],                                    false], // usable by classId
-        'ubeq'  => [parent::V_RANGE,    [1, 14],                                         false], // EQWOW: usable by EQ classId (1-14)
-        'ubop'  => [parent::V_EQUAL,    1,                                               false], // EQWOW: ub/ubeq connector (unset: OR, 1: AND - one character with both classes)
-        'eqi'   => [parent::V_LIST,     [1, 2, 3],                                       false], // EQWOW: item origin (1: EverQuest only, 2: WoW only, 3: Ragnarok Online only (ROWOW), unset: all)
+        'ubr'   => [parent::V_CALLBACK, 'cbUsableByRow',                                 true ], // MergedWorlds: "usable by" rows <game>.<side>.<class>[.<a|o> connector to the next row] (cbUsableByRow)
+        'ub'    => [parent::V_LIST,     [[1, 9], 11],                                    false], // usable by classId (MergedWorlds: old URLs; read as a ubr row)
+        'ubeq'  => [parent::V_RANGE,    [1, 14],                                         false], // EQWOW: usable by EQ classId (1-14) (MergedWorlds: old URLs; read as a ubr row)
+        'ubop'  => [parent::V_EQUAL,    1,                                               false], // EQWOW: ub/ubeq connector (unset: OR, 1: AND) (MergedWorlds: old URLs; read as a ubr row connector)
+        'eqi'   => [parent::V_LIST,     [1, 2, 3, 4],                                    false], // EQWOW: item origin (1: EverQuest only, 2: WoW only, 3: Ragnarok Online only (ROWOW), 4: WoW and EverQuest, unset: all)
         'qu'    => [parent::V_RANGE,    [0, 7],                                          true ], // quality ids
         'ty'    => [parent::V_CALLBACK, 'cbTypeCheck',                                   true ], // item type - dynamic by current group
         'sl'    => [parent::V_CALLBACK, 'cbSlotCheck',                                   true ], // item slot - dynamic by current group
-        'si'    => [parent::V_LIST,     [1, 2, 3, -1, -2],                               false], // side
+        'si'    => [parent::V_LIST,     [1, 2, 3, -1, -2],                               false], // side (MergedWorlds: old URLs; read as a ubr row)
         'minle' => [parent::V_RANGE,    [1, 999],                                        false], // item level min
         'maxle' => [parent::V_RANGE,    [1, 999],                                        false], // item level max
         'minrl' => [parent::V_RANGE,    [1, MAX_LEVEL],                                  false], // required level min
         'maxrl' => [parent::V_RANGE,    [1, MAX_LEVEL],                                  false], // required level max
-        'ubro'  => [parent::V_RANGE,    [0, 4999],                                       false]  // ROWOW: usable by Ragnarok job id (?_ragnarok_job)
+        'ubro'  => [parent::V_RANGE,    [0, 4999],                                       false]  // ROWOW: usable by Ragnarok job id (?_ragnarok_job) (MergedWorlds: old URLs; read as a ubr row)
     );
+
+    // MergedWorlds: "usable by" row games (ubr); 0 = blank: a WoW class as MergedWorlds plays it (also its primary EQ class)
+    public const UB_GAME_ANY = 0;
+    public const UB_GAME_EQ  = 1;
+    public const UB_GAME_WOW = 2;
+    public const UB_GAME_RO  = 3;
+    public const UB_MAX_ROWS = 8;
 
     public function __construct($fromPOST = false, $opts = [])
     {
@@ -2187,59 +2195,17 @@ class ItemListFilter extends Filter
                 $parts[] = $_;
 
         // usable-by (not excluded by requiredClass && armor or weapons match mask from ?_classes)
-        // EQWOW: reworked - every WoW class is also its primary EQ class (mod_everquest_classmap.eqclass_base),
-        // and EQ items ignore WoW class/proficiency rules in-game (usability goes by eqClassMask alone).
-        // ub:   WoW items by the stock WoW-class checks + EQ items by the primary EQ class
-        // ubeq: EQ items by the selected EQ class
-        // both: ubop unset (OR)  - usable by either character
-        //       ubop set   (AND) - one character that is both: WoW items by the WoW class,
-        //                          EQ items by the selected (active) EQ class instead of the primary
-        $ubWow = $ubWowEq = $ubEq = null;
-        $eqRange = Game::eqItemIdRange();
-
-        if (isset($_v['ub']))
-        {
-            $ubWow = array(
-                'AND',
-                ['OR', ['requiredClass', 0], ['requiredClass', $this->list2Mask((array)$_v['ub']), '&']],
-                [
-                    'OR',
-                    ['class', [ITEM_CLASS_WEAPON, ITEM_CLASS_ARMOR], '!'],
-                    ['AND', ['class', ITEM_CLASS_WEAPON], ['subclassbak', $this->ubFilter[$_v['ub']][ITEM_CLASS_WEAPON]]],
-                    ['AND', ['class', ITEM_CLASS_ARMOR],  ['subclassbak', $this->ubFilter[$_v['ub']][ITEM_CLASS_ARMOR]]]
-                ]
-            );
-
-            if ($eqRange)
-            {
-                // stock checks only apply to WoW items ..
-                $ubWow = ['AND', ['OR', ['i.id', $eqRange[0], '<'], ['i.id', $eqRange[1], '>']], $ubWow];
-
-                // .. EQ items go by the WoW class' primary EQ class
-                if ($primary = Game::eqPrimaryClasses()[$_v['ub']] ?? 0)
-                {
-                    $ids = DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($primary - 1));
-                    $ubWowEq = ['i.id', $ids ?: [0]];
-                }
-            }
-        }
-
-        // EQWOW: usable by EQ class - masks copied from mod_everquest_item_template by sqlgen/everquest.ss.php
-        if (isset($_v['ubeq']))
-        {
-            $eqItemIds = DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($_v['ubeq'] - 1));
-            $ubEq = ['i.id', $eqItemIds ?: [0]];
-        }
-
-        if ($ubWow && $ubEq)
-            $parts[] = (isset($_v['ubop']) || !$ubWowEq) ? ['OR', $ubWow, $ubEq] : ['OR', $ubWow, $ubWowEq, $ubEq];
-        else if ($ubWow)
-            $parts[] = $ubWowEq ? ['OR', $ubWow, $ubWowEq] : $ubWow;
-        else if ($ubEq)
-            $parts[] = $ubEq;
+        // MergedWorlds: "Usable by" rows (ubr): each row is [game] [faction] [class / job], rows joined by AND / OR (AND binds
+        // tighter: "A AND B OR C" = (A AND B) OR C). The game picks whose classes the row is about, not the item's origin.
+        // Old URLs (ub, si, ubeq, ubop, ubro) are read as rows (usableByRows).
+        $ubRows = $this->usableByRows();
+        $this->formData['form']['ubRows'] = $ubRows;
+        if ($_ = $this->usableByConditions($ubRows))
+            $parts[] = $_;
 
         // EQWOW: item origin - EverQuest items occupy the ItemTemplateIDMin/Max id range from mod_everquest_systemconfigs
         // ROWOW: Ragnarok Online items occupy Game::roItemIdRange() (mod_rowow_item); 3 = RO items only, and WoW excludes them too
+        // MergedWorlds: 4 = WoW and EverQuest items (no Ragnarok Online items)
         if (isset($_v['eqi']))
         {
             $range   = Game::eqItemIdRange();
@@ -2248,6 +2214,11 @@ class ItemListFilter extends Filter
                 $parts[] = $range ? ['AND', ['i.id', $range[0], '>='], ['i.id', $range[1], '<=']] : ['i.id', 0];
             else if ($_v['eqi'] == 3)                       // Ragnarok Online items only
                 $parts[] = $roRange ? ['AND', ['i.id', $roRange[0], '>='], ['i.id', $roRange[1], '<=']] : ['i.id', 0];
+            else if ($_v['eqi'] == 4)                       // World of Warcraft and EverQuest items
+            {
+                if ($roRange)
+                    $parts[] = ['OR', ['i.id', $roRange[0], '<'], ['i.id', $roRange[1], '>']];
+            }
             else if ($notOther = array_map(fn($r) => ['OR', ['i.id', $r[0], '<'], ['i.id', $r[1], '>']], array_values(array_filter([$range, $roRange]))))
                 $parts[] = array_merge(['AND'], $notOther); // World of Warcraft items only (one part: 'ma' ORs the parts)
         }
@@ -2264,31 +2235,7 @@ class ItemListFilter extends Filter
         if (isset($_v['sl']))
             $parts[] = ['slot', $_v['sl']];
 
-        // side
-        if (isset($_v['si']))
-        {
-            $ex    = [['requiredRace', ChrRace::MASK_ALL, '&'], ChrRace::MASK_ALL, '!'];
-            $notEx = ['OR', ['requiredRace', 0], [['requiredRace', ChrRace::MASK_ALL, '&'], ChrRace::MASK_ALL]];
-
-            switch ($_v['si'])
-            {
-                case  SIDE_BOTH:
-                    $parts[] = ['OR',  [['flagsExtra', 0x3, '&'], [0, 3]], ['requiredRace', ChrRace::MASK_ALL], ['requiredRace', 0]];
-                    break;
-                case  SIDE_HORDE:
-                    $parts[] = ['AND', [['flagsExtra', 0x3, '&'], [0, 1]],  ['OR', $notEx, ['requiredRace', ChrRace::MASK_HORDE, '&']]];
-                    break;
-                case -SIDE_HORDE:
-                    $parts[] = ['OR',  [['flagsExtra', 0x3, '&'], 1],       ['AND', $ex,   ['requiredRace', ChrRace::MASK_HORDE, '&']]];
-                    break;
-                case  SIDE_ALLIANCE:
-                    $parts[] = ['AND', [['flagsExtra', 0x3, '&'], [0, 2]],  ['OR', $notEx, ['requiredRace', ChrRace::MASK_ALLIANCE, '&']]];
-                    break;
-                case -SIDE_ALLIANCE:
-                    $parts[] = ['OR',  [['flagsExtra', 0x3, '&'], 2],       ['AND', $ex,   ['requiredRace', ChrRace::MASK_ALLIANCE, '&']]];
-                    break;
-            }
-        }
+        // side: MergedWorlds - now the faction of a "usable by" row (sideCondition)
 
         // itemLevel min
         if (isset($_v['minle']))
@@ -2306,17 +2253,194 @@ class ItemListFilter extends Filter
         if (isset($_v['maxrl']))
             $parts[] = ['requiredLevel', $_v['maxrl'], '<='];
 
-        // ROWOW: usable by Ragnarok job - equipment whose item_db Jobs and Classes allow the job (as mod-rowow checks them);
-        //        the stat-less post-renewal looks (all jobs, ~4700 headgears) are left out
-        if (isset($_v['ubro']))
-        {
-            if ($job = Ragnarok::jobs()[$_v['ubro']] ?? null)
-                $parts[] = $job['itemJobIdx'] >= 0 ? ['AND', ['ro.isEquip', 1], ['ro.isRenewal', 0], [['ro.jobMask', 1 << $job['itemJobIdx'], '&'], 0, '!'], [['ro.classMask', $job['itemClass'], '&'], 0, '!']] : ['i.id', 0];
-            else
-                $parts[] = ['i.id', 0];
-        }
+        // ROWOW: usable by Ragnarok job - MergedWorlds: now a "usable by" row of game Ragnarok Online (usableByConditions)
 
         return $parts;
+    }
+
+    // MergedWorlds - validates and normalizes one "usable by" row token: <game>.<side>.<class>[.<a|o>]
+    //   game  0 blank (a WoW class as MergedWorlds plays it: its WoW items and its primary EQ class' items), 1 EverQuest (EQ class 1-14),
+    //         2 World of Warcraft (the WoW class by WoW's own rules), 3 Ragnarok Online (RO job id, ?_ragnarok_job)
+    //   side  0 none, else as the old 'si' (1, 2, 3, -1, -2); blank and World of Warcraft rows only
+    //   class empty: any (a row needs a class or a side)
+    //   a / o AND / OR to the next row (default OR)
+    protected function cbUsableByRow(string &$v) : bool
+    {
+        if (!preg_match('/^([0-3])\.(-?[0-3])\.(\d{0,4})(?:\.([ao]))?$/', $v, $m))
+            return false;
+
+        $game = (int)$m[1];
+        $side = in_array($game, [self::UB_GAME_ANY, self::UB_GAME_WOW]) ? (int)$m[2] : 0;
+        $cls  = $m[3];
+        $op   = $m[4] ?? '';
+
+        if ($side && !in_array($side, [SIDE_ALLIANCE, SIDE_HORDE, SIDE_BOTH, -SIDE_ALLIANCE, -SIDE_HORDE]))
+            return false;
+
+        if ($cls !== '')
+        {
+            $cls = (int)$cls;
+            $ok  = match ($game)
+            {
+                self::UB_GAME_ANY, self::UB_GAME_WOW => isset($this->ubFilter[$cls]),
+                self::UB_GAME_EQ                     => $cls >= 1 && $cls <= 14,
+                self::UB_GAME_RO                     => (Ragnarok::jobs()[$cls]['itemJobIdx'] ?? -1) >= 0
+            };
+            if (!$ok)
+                return false;
+        }
+        else if (!$side)
+            return false;                                   // empty row
+
+        $v = $game.'.'.$side.'.'.$cls.($op ? '.'.$op : '');
+        return true;
+    }
+
+    // MergedWorlds - the "usable by" rows: [[game, side, class or null, 'a' | 'o'], ...] from ubr, else from the old fields
+    private function usableByRows() : array
+    {
+        $_v   = $this->fiData['v'];
+        $rows = [];
+
+        if (!empty($_v['ubr']))
+        {
+            foreach (array_slice((array)$_v['ubr'], 0, self::UB_MAX_ROWS) as $tok)
+            {
+                $p      = explode('.', $tok);
+                $rows[] = [(int)$p[0], (int)$p[1], $p[2] === '' ? null : (int)$p[2], ($p[3] ?? 'o') == 'a' ? 'a' : 'o'];
+            }
+
+            return $rows;
+        }
+
+        // old URLs: "Usable by" (si + ub), then "Usable by EQ class" (ubop: AND / OR), then "Usable by RO job" (was ANDed)
+        if (isset($_v['ub']) || isset($_v['si']))
+            $rows[] = [self::UB_GAME_ANY, (int)($_v['si'] ?? 0), isset($_v['ub']) ? (int)$_v['ub'] : null, 'o'];
+
+        if (isset($_v['ubeq']))
+        {
+            if ($rows)
+                $rows[count($rows) - 1][3] = isset($_v['ubop']) ? 'a' : 'o';
+            $rows[] = [self::UB_GAME_EQ, 0, (int)$_v['ubeq'], 'o'];
+        }
+
+        if (isset($_v['ubro']))
+        {
+            if ($rows)
+                $rows[count($rows) - 1][3] = 'a';
+            $rows[] = [self::UB_GAME_RO, 0, (int)$_v['ubro'], 'o'];
+        }
+
+        return $rows;
+    }
+
+    // MergedWorlds - one condition for all rows: OR of groups of ANDed rows
+    private function usableByConditions(array $rows) : ?array
+    {
+        $groups = [[]];
+        foreach ($rows as $i => [$game, $side, $cls, $op])
+        {
+            if ($cnd = $this->usableByRowCondition($game, $side, $cls))
+                $groups[count($groups) - 1][] = $cnd;
+
+            if ($op == 'o' && $i < count($rows) - 1 && $groups[count($groups) - 1])
+                $groups[] = [];
+        }
+
+        $or = [];
+        foreach ($groups as $g)
+            if ($g)
+                $or[] = count($g) > 1 ? array_merge(['AND'], $g) : $g[0];
+
+        if (!$or)
+            return null;
+
+        return count($or) > 1 ? array_merge(['OR'], $or) : $or[0];
+    }
+
+    private function usableByRowCondition(int $game, int $side, ?int $cls) : ?array
+    {
+        $and = [];
+
+        if ($cls !== null)
+        {
+            switch ($game)
+            {
+                case self::UB_GAME_ANY:
+                case self::UB_GAME_WOW:
+                    // the stock WoW-class checks; EQWOW: they only apply to WoW items - EQ items ignore WoW class/proficiency
+                    // rules in-game (usability goes by eqClassMask alone), and every WoW class is also its primary EQ class
+                    // (mod_everquest_classmap.eqclass_base), so the blank game adds that EQ class' items
+                    if (!isset($this->ubFilter[$cls]))
+                        return ['i.id', 0];
+
+                    $wow = array(
+                        'AND',
+                        ['OR', ['requiredClass', 0], ['requiredClass', 1 << ($cls - 1), '&']],
+                        [
+                            'OR',
+                            ['class', [ITEM_CLASS_WEAPON, ITEM_CLASS_ARMOR], '!'],
+                            ['AND', ['class', ITEM_CLASS_WEAPON], ['subclassbak', $this->ubFilter[$cls][ITEM_CLASS_WEAPON]]],
+                            ['AND', ['class', ITEM_CLASS_ARMOR],  ['subclassbak', $this->ubFilter[$cls][ITEM_CLASS_ARMOR]]]
+                        ]
+                    );
+
+                    if ($eqRange = Game::eqItemIdRange())
+                    {
+                        $wow = ['AND', ['OR', ['i.id', $eqRange[0], '<'], ['i.id', $eqRange[1], '>']], $wow];
+
+                        if ($game == self::UB_GAME_ANY && ($primary = Game::eqPrimaryClasses()[$cls] ?? 0))
+                            $wow = ['OR', $wow, $this->eqClassItemCondition($primary)];
+                    }
+
+                    $and[] = $wow;
+                    break;
+                case self::UB_GAME_EQ:                      // EQWOW: masks copied from mod_everquest_item_template by sqlgen/everquest.ss.php
+                    $and[] = $this->eqClassItemCondition($cls);
+                    break;
+                case self::UB_GAME_RO:                      // ROWOW: equipment whose item_db Jobs and Classes allow the job (as mod-rowow checks them);
+                                                            //        the stat-less post-renewal looks (all jobs, ~4700 headgears) are left out
+                    $job = Ragnarok::jobs()[$cls] ?? null;
+                    if (!$job || $job['itemJobIdx'] < 0)
+                        return ['i.id', 0];
+
+                    $and[] = ['AND', ['ro.isEquip', 1], ['ro.isRenewal', 0], [['ro.jobMask', 1 << $job['itemJobIdx'], '&'], 0, '!'], [['ro.classMask', $job['itemClass'], '&'], 0, '!']];
+                    break;
+            }
+        }
+
+        if ($side && in_array($game, [self::UB_GAME_ANY, self::UB_GAME_WOW]) && ($_ = $this->sideCondition($side)))
+            $and[] = $_;
+
+        if (!$and)
+            return null;
+
+        return count($and) > 1 ? array_merge(['AND'], $and) : $and[0];
+    }
+
+    private function eqClassItemCondition(int $eqClass) : array
+    {
+        static $ids = [];
+        $ids[$eqClass] ??= DB::Aowow()->selectCol('SELECT `id` FROM ?_everquest_item WHERE `eqClassMask` & ?d', 1 << ($eqClass - 1));
+
+        return ['i.id', $ids[$eqClass] ?: [0]];
+    }
+
+    // side (the old 'si' field)
+    private function sideCondition(int $side) : ?array
+    {
+        $ex    = [['requiredRace', ChrRace::MASK_ALL, '&'], ChrRace::MASK_ALL, '!'];
+        $notEx = ['OR', ['requiredRace', 0], [['requiredRace', ChrRace::MASK_ALL, '&'], ChrRace::MASK_ALL]];
+
+        return match ($side)
+        {
+             SIDE_BOTH     => ['OR',  [['flagsExtra', 0x3, '&'], [0, 3]], ['requiredRace', ChrRace::MASK_ALL], ['requiredRace', 0]],
+             SIDE_HORDE    => ['AND', [['flagsExtra', 0x3, '&'], [0, 1]],  ['OR', $notEx, ['requiredRace', ChrRace::MASK_HORDE, '&']]],
+            -SIDE_HORDE    => ['OR',  [['flagsExtra', 0x3, '&'], 1],       ['AND', $ex,   ['requiredRace', ChrRace::MASK_HORDE, '&']]],
+             SIDE_ALLIANCE => ['AND', [['flagsExtra', 0x3, '&'], [0, 2]],  ['OR', $notEx, ['requiredRace', ChrRace::MASK_ALLIANCE, '&']]],
+            -SIDE_ALLIANCE => ['OR',  [['flagsExtra', 0x3, '&'], 2],       ['AND', $ex,   ['requiredRace', ChrRace::MASK_ALLIANCE, '&']]],
+            default        => null
+        };
     }
 
     // ROWOW - yes/no on a ?_ragnarok_item flag column (RO items only either way)
@@ -2331,6 +2455,9 @@ class ItemListFilter extends Filter
     // ROWOW - RO item category (Ragnarok::CATEGORIES)
     protected function cbRagnarokCategory(int $cr, int $crs, string $crv) : ?array
     {
+        if ($crs == Ragnarok::CATEGORY_ANY_WEAPON)         // MergedWorlds: Items > Ragnarok Items > Weapons
+            return ['ro.roType', 'Weapon'];
+
         if (!isset(Ragnarok::CATEGORIES[$crs]))
             return null;
 

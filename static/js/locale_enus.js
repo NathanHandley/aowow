@@ -131,121 +131,59 @@ var mn_rojobs = [
     [4047,"Star Gladiator","?ragnarok-job=4047"],
     [4049,"Soul Linker","?ragnarok-job=4049"]
 ];
+// MergedWorlds: EverQuest classes (?everquest-classes, ?everquest-class=<EQ class id 1-14>)
+var mn_eqclasses = [
+    [1,"Warrior","?everquest-class=1",,{className:"c1",tinyIcon:"class_warrior"}],
+    [2,"Cleric","?everquest-class=2",,{className:"c5",tinyIcon:"class_priest"}],
+    [3,"Paladin","?everquest-class=3",,{className:"c2",tinyIcon:"class_paladin"}],
+    [4,"Ranger","?everquest-class=4",,{className:"c3",tinyIcon:"class_hunter"}],
+    [5,"Shadow Knight","?everquest-class=5",,{className:"c6",tinyIcon:"class_deathknight"}],
+    [6,"Druid","?everquest-class=6",,{className:"c11",tinyIcon:"class_druid"}],
+    [7,"Monk","?everquest-class=7",,{className:"c4",tinyIcon:"class_rogue"}],
+    [8,"Bard","?everquest-class=8",,{className:"c1",tinyIcon:"class_warrior"}],
+    [9,"Rogue","?everquest-class=9",,{className:"c4",tinyIcon:"class_rogue"}],
+    [10,"Shaman","?everquest-class=10",,{className:"c7",tinyIcon:"class_shaman"}],
+    [11,"Necromancer","?everquest-class=11",,{className:"c9",tinyIcon:"class_warlock"}],
+    [12,"Wizard","?everquest-class=12",,{className:"c8",tinyIcon:"class_mage"}],
+    [13,"Magician","?everquest-class=13",,{className:"c8",tinyIcon:"class_mage"}],
+    [14,"Enchanter","?everquest-class=14",,{className:"c5",tinyIcon:"class_priest"}]
+];
+// MergedWorlds: Database > Items by game of origin - global.js (g_mwBuildItemMenus) builds mn_items from the WoW categories below
+// (mn_items), these names, the Ragnarok Online categories (?_ragnarok_item.roCategory, item filter cr=322), mn_eqclasses and mn_rojobs
+var mn_items_mw = {
+    games: {0:"All Items", 4:"Warcraft and EverQuest Items", 2:"Warcraft Items", 1:"EverQuest Items", 3:"Ragnarok Items"},
+    ragnarok: "Ragnarok",
+    eqClasses: "EQ Classes",
+    byClass: "By Class",
+    byJob: "By Job",
+    ro: [
+        [100,"Weapons",[
+            [1,"Daggers"],[2,"One-Handed Swords"],[3,"Two-Handed Swords"],[4,"One-Handed Spears"],[5,"Two-Handed Spears"],[6,"One-Handed Axes"],
+            [7,"Two-Handed Axes"],[8,"Maces"],[9,"Staves"],[22,"Two-Handed Staves"],[10,"Bows"],[11,"Knuckles"],[12,"Musical Instruments"],[13,"Whips"],
+            [14,"Books"],[15,"Katars"],[16,"Revolvers"],[17,"Rifles"],[18,"Gatling Guns"],[19,"Shotguns"],[20,"Grenade Launchers"],[21,"Huuma Shuriken"]
+        ]],
+        [30,"Upper Headgear"],
+        [31,"Middle Headgear"],
+        [32,"Lower Headgear"],
+        [33,"Armor"],
+        [34,"Shields"],
+        [35,"Garments"],
+        [36,"Footgear"],
+        [37,"Accessories"],
+        [38,"Costumes"],
+        [,"Other"],
+        [40,"Cards"],
+        [41,"Healing Items"],
+        [42,"Usable Items"],
+        [43,"Delayed Consumables"],
+        [44,"Ammunition"],
+        [45,"Pet Eggs"],
+        [46,"Pet Armor"],
+        [47,"Miscellaneous"],
+        [48,"Cash Shop Items"]
+    ]
+};
 var mn_items = [
-    // ROWOW: Ragnarok Online items by RO category (filter cr=322) and by job (filter ubro)
-    [,"Ragnarok",,[
-        [,"Weapons",,[
-            [,"Daggers",'?items&filter=cr=322;crs=1;crv=0'],
-            [,"One-Handed Swords",'?items&filter=cr=322;crs=2;crv=0'],
-            [,"Two-Handed Swords",'?items&filter=cr=322;crs=3;crv=0'],
-            [,"One-Handed Spears",'?items&filter=cr=322;crs=4;crv=0'],
-            [,"Two-Handed Spears",'?items&filter=cr=322;crs=5;crv=0'],
-            [,"One-Handed Axes",'?items&filter=cr=322;crs=6;crv=0'],
-            [,"Two-Handed Axes",'?items&filter=cr=322;crs=7;crv=0'],
-            [,"Maces",'?items&filter=cr=322;crs=8;crv=0'],
-            [,"Staves",'?items&filter=cr=322;crs=9;crv=0'],
-            [,"Two-Handed Staves",'?items&filter=cr=322;crs=22;crv=0'],
-            [,"Bows",'?items&filter=cr=322;crs=10;crv=0'],
-            [,"Knuckles",'?items&filter=cr=322;crs=11;crv=0'],
-            [,"Musical Instruments",'?items&filter=cr=322;crs=12;crv=0'],
-            [,"Whips",'?items&filter=cr=322;crs=13;crv=0'],
-            [,"Books",'?items&filter=cr=322;crs=14;crv=0'],
-            [,"Katars",'?items&filter=cr=322;crs=15;crv=0'],
-            [,"Revolvers",'?items&filter=cr=322;crs=16;crv=0'],
-            [,"Rifles",'?items&filter=cr=322;crs=17;crv=0'],
-            [,"Gatling Guns",'?items&filter=cr=322;crs=18;crv=0'],
-            [,"Shotguns",'?items&filter=cr=322;crs=19;crv=0'],
-            [,"Grenade Launchers",'?items&filter=cr=322;crs=20;crv=0'],
-            [,"Huuma Shuriken",'?items&filter=cr=322;crs=21;crv=0']
-        ]],
-        [,"Armor",,[
-            [,"Upper Headgear",'?items&filter=cr=322;crs=30;crv=0'],
-            [,"Middle Headgear",'?items&filter=cr=322;crs=31;crv=0'],
-            [,"Lower Headgear",'?items&filter=cr=322;crs=32;crv=0'],
-            [,"Body Armor",'?items&filter=cr=322;crs=33;crv=0'],
-            [,"Shields",'?items&filter=cr=322;crs=34;crv=0'],
-            [,"Garments",'?items&filter=cr=322;crs=35;crv=0'],
-            [,"Footgear",'?items&filter=cr=322;crs=36;crv=0'],
-            [,"Accessories",'?items&filter=cr=322;crs=37;crv=0'],
-            [,"Costumes",'?items&filter=cr=322;crs=38;crv=0']
-        ]],
-        [,"Other",,[
-            [,"Cards",'?items&filter=cr=322;crs=40;crv=0'],
-            [,"Healing Items",'?items&filter=cr=322;crs=41;crv=0'],
-            [,"Usable Items",'?items&filter=cr=322;crs=42;crv=0'],
-            [,"Delayed Consumables",'?items&filter=cr=322;crs=43;crv=0'],
-            [,"Ammunition",'?items&filter=cr=322;crs=44;crv=0'],
-            [,"Pet Eggs",'?items&filter=cr=322;crs=45;crv=0'],
-            [,"Pet Armor",'?items&filter=cr=322;crs=46;crv=0'],
-            [,"Miscellaneous",'?items&filter=cr=322;crs=47;crv=0'],
-            [,"Cash Shop Items",'?items&filter=cr=322;crs=48;crv=0']
-        ]],
-        [,"By Job",,[
-            [,"Novice",'?items&filter=ubro=0'],
-            [,"Swordman",'?items&filter=ubro=1'],
-            [,"Mage",'?items&filter=ubro=2'],
-            [,"Archer",'?items&filter=ubro=3'],
-            [,"Acolyte",'?items&filter=ubro=4'],
-            [,"Merchant",'?items&filter=ubro=5'],
-            [,"Thief",'?items&filter=ubro=6'],
-            [,"Knight",'?items&filter=ubro=7'],
-            [,"Crusader",'?items&filter=ubro=14'],
-            [,"Wizard",'?items&filter=ubro=9'],
-            [,"Sage",'?items&filter=ubro=16'],
-            [,"Hunter",'?items&filter=ubro=11'],
-            [,"Bard",'?items&filter=ubro=19'],
-            [,"Dancer",'?items&filter=ubro=20'],
-            [,"Priest",'?items&filter=ubro=8'],
-            [,"Monk",'?items&filter=ubro=15'],
-            [,"Blacksmith",'?items&filter=ubro=10'],
-            [,"Alchemist",'?items&filter=ubro=18'],
-            [,"Assassin",'?items&filter=ubro=12'],
-            [,"Rogue",'?items&filter=ubro=17'],
-            [,"High Novice",'?items&filter=ubro=4001'],
-            [,"High Swordman",'?items&filter=ubro=4002'],
-            [,"High Mage",'?items&filter=ubro=4003'],
-            [,"High Archer",'?items&filter=ubro=4004'],
-            [,"High Acolyte",'?items&filter=ubro=4005'],
-            [,"High Merchant",'?items&filter=ubro=4006'],
-            [,"High Thief",'?items&filter=ubro=4007'],
-            [,"Lord Knight",'?items&filter=ubro=4008'],
-            [,"Paladin",'?items&filter=ubro=4015'],
-            [,"High Wizard",'?items&filter=ubro=4010'],
-            [,"Professor",'?items&filter=ubro=4017'],
-            [,"Sniper",'?items&filter=ubro=4012'],
-            [,"Clown",'?items&filter=ubro=4020'],
-            [,"Gypsy",'?items&filter=ubro=4021'],
-            [,"High Priest",'?items&filter=ubro=4009'],
-            [,"Champion",'?items&filter=ubro=4016'],
-            [,"Whitesmith",'?items&filter=ubro=4011'],
-            [,"Creator",'?items&filter=ubro=4019'],
-            [,"Assassin Cross",'?items&filter=ubro=4013'],
-            [,"Stalker",'?items&filter=ubro=4018'],
-            [,"Super Novice",'?items&filter=ubro=23'],
-            [,"Gunslinger",'?items&filter=ubro=24'],
-            [,"Ninja",'?items&filter=ubro=25'],
-            [,"Taekwon",'?items&filter=ubro=4046'],
-            [,"Star Gladiator",'?items&filter=ubro=4047'],
-            [,"Soul Linker",'?items&filter=ubro=4049']
-        ]]
-    ]],
-    // EQWOW: browse items by EQ class (AllowedEQClassMask filter)
-    [,"EQ Classes",,[
-        [,"Warrior",'?items&filter=ubeq=1',,{className:"c1",tinyIcon:"class_warrior"}],
-        [,"Cleric",'?items&filter=ubeq=2',,{className:"c5",tinyIcon:"class_priest"}],
-        [,"Paladin",'?items&filter=ubeq=3',,{className:"c2",tinyIcon:"class_paladin"}],
-        [,"Ranger",'?items&filter=ubeq=4',,{className:"c3",tinyIcon:"class_hunter"}],
-        [,"Shadow Knight",'?items&filter=ubeq=5',,{className:"c6",tinyIcon:"class_deathknight"}],
-        [,"Druid",'?items&filter=ubeq=6',,{className:"c11",tinyIcon:"class_druid"}],
-        [,"Monk",'?items&filter=ubeq=7',,{className:"c4",tinyIcon:"class_rogue"}],
-        [,"Bard",'?items&filter=ubeq=8',,{className:"c1",tinyIcon:"class_warrior"}],
-        [,"Rogue",'?items&filter=ubeq=9',,{className:"c4",tinyIcon:"class_rogue"}],
-        [,"Shaman",'?items&filter=ubeq=10',,{className:"c7",tinyIcon:"class_shaman"}],
-        [,"Necromancer",'?items&filter=ubeq=11',,{className:"c9",tinyIcon:"class_warlock"}],
-        [,"Wizard",'?items&filter=ubeq=12',,{className:"c8",tinyIcon:"class_mage"}],
-        [,"Magician",'?items&filter=ubeq=13',,{className:"c8",tinyIcon:"class_mage"}],
-        [,"Enchanter",'?items&filter=ubeq=14',,{className:"c5",tinyIcon:"class_priest"}]
-    ]],
     [2,"Weapons",,[
         [,"One-Handed",'?items=2&filter=ty=15:13:0:4:7'],
         [15,"Daggers"],
@@ -1375,8 +1313,9 @@ var mn_database = [
     [101,"Enchantments","?enchantments",mn_enchantments],
     [, "Character"],
     [9,"Achievements","?achievements",mn_achievements],
-    [12,"Classes","?classes",mn_classes],
-    [104,"Ragnarok Jobs","?ragnarok-jobs",mn_rojobs],               // ROWOW
+    [12,"Warcraft Classes","?classes",mn_classes,{sortName:"Classes 1"}],
+    [105,"EverQuest Classes","?everquest-classes",mn_eqclasses,{sortName:"Classes 2"}],   // MergedWorlds
+    [104,"Ragnarok Jobs","?ragnarok-jobs",mn_rojobs,{sortName:"Classes 3"}],               // ROWOW
     [100,"Emotes","?emotes",null],
     [8,"Hunter Pets","?pets",mn_pets],
     [14,"Professions & Skills","?skills",mn_skills],
@@ -4062,6 +4001,7 @@ var LANG = {
     fidropdowns: {
         rocategory:     [  // ROWOW: ?_ragnarok_item.roCategory
                             [null, "Weapons"],
+                            [100, "Any weapon"],
                             [1, "Daggers"], [2, "One-Handed Swords"], [3, "Two-Handed Swords"], [4, "One-Handed Spears"], [5, "Two-Handed Spears"], [6, "One-Handed Axes"], [7, "Two-Handed Axes"], [8, "Maces"], [9, "Staves"], [22, "Two-Handed Staves"], [10, "Bows"], [11, "Knuckles"], [12, "Musical Instruments"], [13, "Whips"], [14, "Books"], [15, "Katars"], [16, "Revolvers"], [17, "Rifles"], [18, "Gatling Guns"], [19, "Shotguns"], [20, "Grenade Launchers"], [21, "Huuma Shuriken"],
                             [null, "Armor"],
                             [30, "Upper Headgear"], [31, "Middle Headgear"], [32, "Lower Headgear"], [33, "Body Armor"], [34, "Shields"], [35, "Garments"], [36, "Footgear"], [37, "Accessories"], [38, "Costumes"],

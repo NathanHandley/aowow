@@ -93,6 +93,25 @@ class ItemPage extends genericPage
         $_class    = $this->subject->getField('class');
         $_subClass = $this->subject->getField('subClass');
 
+        // MergedWorlds: Items > game of origin (menu ids as the eqi filter: 1 EverQuest, 2 World of Warcraft, 3 Ragnarok Online)
+        $eqRange = Game::eqItemIdRange();
+        $roRange = Game::roItemIdRange();
+        if ($roRange && $this->typeId >= $roRange[0] && $this->typeId <= $roRange[1])
+        {
+            $this->path[] = 3;                              // Ragnarok Items > RO category (Weapons > weapon type)
+            if ($ro = Ragnarok::itemData([$this->typeId])[$this->typeId] ?? null)
+            {
+                $cat = (int)$ro['roCategory'];
+                if ($cat >= 1 && $cat <= 22)
+                    $this->path[] = 100;
+                if ($cat)
+                    $this->path[] = $cat;
+            }
+            return;
+        }
+
+        $this->path[] = $eqRange && $this->typeId >= $eqRange[0] && $this->typeId <= $eqRange[1] ? 1 : 2;
+
         if (in_array($_class, [ITEM_CLASS_REAGENT, ITEM_CLASS_GENERIC, ITEM_CLASS_PERMANENT]))
         {
             $this->path[] = ITEM_CLASS_MISC;                // misc.

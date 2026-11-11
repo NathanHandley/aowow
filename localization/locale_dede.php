@@ -392,6 +392,25 @@ $lang = array(
         'sc'            => ["Körperlich", "Heilig", "Feuer", "Natur", "Frost", "Schatten", "Arkan"],
         'dt'            => [null, "Magie", "Fluch", "Krankheit", "Gift", "Verstohlenheit", "Unsichtbarkeit", "Magie, Fluch, Krankheit, Gift", "Zauber (NSC)", "Wut"],
         'cl'            => [null, "Krieger", "Paladin", "Jäger", "Schurke", "Priester", "Todesritter", "Schamane", "Magier", "Hexenmeister", null, "Druide"],
+        'eqcl'          => [null, "Warrior", "Cleric", "Paladin", "Ranger", "Shadow Knight", "Druid", "Monk", "Bard", "Rogue", "Shaman", "Necromancer", "Wizard", "Magician", "Enchanter"], // EQWOW: EQ classes (server ids 1-14, mask bit = 1 << (id - 1))
+        'eqClass'       => "EQ class",                      // EQWOW
+        'eqLearnLevel'  => "EQ learn level",                // EQWOW
+        'eqClasses'     => "EverQuest Classes",             // MergedWorlds: ?everquest-classes, ?everquest-class=<id>
+        'eqClassPage'   => array(                           // MergedWorlds
+            'class'      => "EverQuest Class",
+            'notFound'   => "This EverQuest class doesn't exist.",
+            'intro'      => "The EverQuest classes as MergedWorlds plays them. Every WoW class is also its primary EverQuest class, and can take a second EverQuest class.",
+            'eqClass'    => "EQ class",
+            'primaryOf'  => "Primary EQ class of",
+            'secondOf'   => "Default second EQ class of",
+            'eligibleOf' => "Can be the second EQ class of",
+            'items'      => "Usable items",
+            'spells'     => "Spells",
+            'allItems'   => "all usable items",
+            'allSpells'  => "all spells",
+            'id'         => "EQ class id",
+            'none'       => "None"
+        ),
         'ra'            => [-2 => "Horde", -1 => "Allianz", null, "Mensch", "Orc", "Zwerg", "Nachtelf", "Untoter", "Tauren", "Gnom", "Troll", null, "Blutelf", "Draenei"],
         'rep'           => ["Hasserfüllt", "Feindselig", "Unfreundlich", "Neutral", "Freundlich", "Wohlwollend", "Respektvoll", "Ehrfürchtig"],
         'st'            => array(
@@ -1858,6 +1877,14 @@ $lang = array(
         'slot'          => "Platz",
         '_quality'      => "Qualität",
         'usableBy'      => "Benutzbar von",
+        'itemOrigin'    => "Game of origin",                // EQWOW
+        'eqOrigin'      => [null, "EverQuest", "World of Warcraft", "Ragnarok Online", "World of Warcraft and EverQuest"], // EQWOW - indexes match filter values 1 / 2 (ROWOW: 3, MergedWorlds: 4)
+        'ubPlusEq'      => "%s (+EQ %s)",                   // MergedWorlds: "Usable by" row, blank game: the WoW class and its primary EQ class
+        'ubAnd'         => "AND",                           // MergedWorlds: "Usable by" row connectors
+        'ubOr'          => "OR",
+        'ubAddRow'      => "Add a class",
+        'ubRemoveRow'   => "Remove",
+        'ubHint'        => "AND is applied before OR.",
         'buyout'        => "Sofortkaufpreis",
         'each'          => "Stück",
         'tabOther'      => "Anderes",
