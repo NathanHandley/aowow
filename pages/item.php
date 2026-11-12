@@ -546,7 +546,6 @@ class ItemPage extends genericPage
                 {
                     $tabData['data']      = array_merge($tabData['data'], $roDroppedBy['drops']);
                     $tabData['extraCols'] = array_values(array_unique(array_merge($tabData['extraCols'] ?? [], ['$Listview.extraCols.percent'])));
-                    $tabData['note']      = 'Ragnarok Online monsters: '.Ragnarok::dropRateNote();
                 }
 
                 if (!$tabData['data'])
@@ -584,7 +583,7 @@ class ItemPage extends genericPage
                 'id'        => 'mvp-reward-from',
                 'extraCols' => ['$Listview.extraCols.percent'],
                 'sort'      => ['-percent', 'name'],
-                'note'      => 'Given to the MVP only, one item of the monster\'s MVP reward: the chance shown is the chance it is this one. '.Ragnarok::dropRateNote()
+                'note'      => 'Given to the MVP only, one item of the monster\'s MVP reward: the chance shown is the chance it is this one.'
             )];
 
         // tabs: this item contains..
