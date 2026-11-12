@@ -3,7 +3,7 @@
 
     Data: g_ro_builder, built by setup/tools/filegen/robuilder.ss.php (php aowow --build=robuilder) from mod-rowow's tables.
     The rules are mod-rowow's (a port of pre-renewal rAthena); each formula names the mod-rowow function it follows
-    (E:\MW\rowow\azerothcore-wotlk\Source\modules\mod-rowow\src).
+    (E:\MW\eqwow-live\azerothcore-wotlk\Source\modules\mod-rowow\src).
 
     Build link: ?rocalc#<base level>/<job>.<job level>-<job>.<job level>.../<str>.<agi>.<vit>.<int>.<dex>.<luk>/<skill>:<level>,.../<options>
     options: w<weapon index> (ASPD and ATK weapon), r (riding a Peco), n (Super Novice that never died)

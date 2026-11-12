@@ -9,7 +9,7 @@ if (!CLI)
 
 // ROWOW - Ragnarok character builder (?rocalc)
 // Compiles mod-rowow's pre-renewal job and skill data into datasets/ro-builder (loaded by ?data=ro-builder).
-// The rules mirror mod-rowow (E:\MW\rowow\azerothcore-wotlk\Source\modules\mod-rowow\src):
+// The rules mirror mod-rowow (E:\MW\eqwow-live\azerothcore-wotlk\Source\modules\mod-rowow\src):
 //   jobs (PreRenewalJobNames, SecondJobFirstJobIDs, BabyJobNormalJobIDs)    ROWOW_Identity.cpp
 //   max levels, base HP/SP by level                                       ROWOW_Identity.cpp LoadIdentityData
 //   job bonus stats, attack motion by weapon                              ROWOW_Status.cpp LoadStatusData

@@ -1,13 +1,14 @@
-# ROWOW: refresh the aowow database viewer after a ROWOW convert (Windows equivalent of eqwow-viewer-update.sh, for the rowow workstream).
+# EQWOW-Live: refresh the aowow database viewer after an EQWOW-Live convert (Windows equivalent of eqwow-viewer-update.sh; was rowow-viewer-update.ps1,
+# the ROWOW workstream merged into EQWOW-Live on 2026-11-11).
 #
-#   .\rowow-viewer-update.ps1            full refresh: client data overlay + database regeneration + images
-#   .\rowow-viewer-update.ps1 -Quick     database only (skips the icon and map image builds, which take most of the time)
+#   .\eqwow-viewer-update.ps1            full refresh: client data overlay + database regeneration + images
+#   .\eqwow-viewer-update.ps1 -Quick     database only (skips the icon and map image builds, which take most of the time)
 #
-# config\config.php must point at the rowow databases (mw_rowow_world etc. and the aowow DB mw_rowow_aowow).
+# config\config.php must point at the EQWOW-Live env databases (mw_eqwow_live_world etc. and the aowow DB mw_eqwow_live_aowow).
 
 param(
     [switch]$Quick,
-    [string]$Exports = 'C:\MWWork\rowow\Assets\WOWExports',
+    [string]$Exports = 'C:\MWWork\eqwow-live\Assets\WOWExports',
     [string]$Php = "$env:USERPROFILE\.local\php-8.3\php.exe"
 )
 
@@ -16,7 +17,7 @@ $ErrorActionPreference = 'Continue'
 $aowow = $PSScriptRoot
 $mpqdata = Join-Path $aowow 'setup\mpqdata\enUS'
 
-Write-Host '== ROWOW viewer update =='
+Write-Host '== EQWOW viewer update =='
 if (-not (Test-Path (Join-Path $Exports 'MPQReady\DBFilesClient'))) { Write-Error "converter export folder not found: $Exports"; exit 1 }
 
 # The existing folders keep their casing (Icons, WORLDMAP)
