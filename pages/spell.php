@@ -944,6 +944,10 @@ class SpellPage extends GenericPage
         if ($auras = DB::World()->selectCol('SELECT `entry` FROM creature_template_addon WHERE `auras` REGEXP ?', '\\b'.$this->typeId.'\\b'))
             $conditions[] = ['id', $auras];
 
+        // ROWOW - Ragnarok Online monsters whose mob_skill_db skills cast it (mod-rowow's mob AI, not SmartAI)
+        if ($roCreatures = Ragnarok::creaturesUsingSpell($this->typeId))
+            $conditions[] = ['id', $roCreatures];
+
         $ubCreature = new CreatureList($conditions);
         if (!$ubCreature->error)
         {

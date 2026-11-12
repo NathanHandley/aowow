@@ -597,6 +597,135 @@ class Ragnarok
         return array_keys(self::creaturesOfMobs(array_keys($drops)));
     }
 
+    /*
+        Monster skills.  An RO monster has no SmartAI and no creature_template spells: mod-rowow's mob AI uses mob_skill_db's rows (mod_rowow_db_mob_skill,
+        one row a skill use: the monster's state, the skill and level, the chance per 10000, cast time and reuse delay in ms, its target and condition),
+        casting each skill's WoW spell (mod_rowow_skill_spell by the skill's name and level, as ROWOW_SkillEngine.cpp GetSkillSpellID; the monster-only
+        NPC_ skills have one spell for all their levels).
+    */
+    private const MOB_SKILL_STATES = array(
+        'any'       => 'Any time',
+        'idle'      => 'Idle',
+        'walk'      => 'Walking',
+        'loot'      => 'Looting',
+        'dead'      => 'On death',
+        'attack'    => 'In combat',
+        'angry'     => 'Before it attacks',
+        'chase'     => 'Chasing',
+        'follow'    => 'Chasing',
+        'anytarget' => 'With a target'
+    );
+
+    private static function mobSkillCondition(string $type, ?string $value) : string
+    {
+        $v = $value ?? '0';
+        return match (strtolower($type))
+        {
+            'always'            => '',
+            'onspawn', 'spawn'  => 'when it appears',
+            'myhpltmaxrate'     => 'at '.$v.'% HP or less',
+            'myhpinrate'        => 'at '.$v.'% HP or more',
+            'mystatuson'        => 'while it has '.$v,
+            'mystatusoff'       => 'while it doesn\'t have '.$v,
+            'friendhpltmaxrate' => 'when an ally is at '.$v.'% HP or less',
+            'friendhpinrate'    => 'when an ally is at '.$v.'% HP or more',
+            'friendstatuson'    => 'when an ally has '.$v,
+            'friendstatusoff'   => 'when an ally doesn\'t have '.$v,
+            'attackpcgt'        => 'when more than '.$v.' players attack it',
+            'attackpcge'        => 'when '.$v.' or more players attack it',
+            'slavelt'           => 'with fewer than '.$v.' followers',
+            'slavele'           => 'with '.$v.' followers or fewer',
+            'closedattacked'    => 'when hit in melee',
+            'longrangeattacked' => 'when hit from range',
+            'skillused'         => 'when a skill ('.$v.') is used on it',
+            'afterskill'        => 'after it uses skill '.$v,
+            'casttargeted'      => 'when targeted by a cast',
+            'rudeattacked'      => 'when attacked while it can\'t fight back',
+            'mobnearbygt'       => 'with more than '.$v.' monsters near',
+            'groundattacked'    => 'when hit by a ground skill',
+            'damagedgt'         => 'when hit for more than '.$v,
+            'alchemist'         => 'when summoned by an Alchemist',
+            default             => $type.($value !== null ? ' '.$value : '')
+        };
+    }
+
+    // the spell a monster's use of a skill at a level casts ([level => spell] of the skill): its level's, else the highest level's under it (a monster
+    // skill past the levels players have), else its first
+    private static function mobSkillSpell(array $levels, int $level) : int
+    {
+        $below = array_filter(array_keys($levels), fn($l) => $l <= $level);
+        return $levels[$below ? max($below) : min(array_keys($levels))];
+    }
+
+    // creature template ids of the RO monsters whose skills cast a spell (the spell page's "Used by")
+    public static function creaturesUsingSpell(int $spellId) : array
+    {
+        if (!self::hasMobData() || !DB::World()->selectCell('SHOW TABLES LIKE ?', 'mod_rowow_db_mob_skill'))
+            return [];
+
+        if (!($skill = DB::World()->selectCell('SELECT `SkillName` FROM mod_rowow_skill_spell WHERE `SpellID` = ?d', $spellId)))
+            return [];
+
+        $levels = DB::World()->selectCol('SELECT `SkillLevel` AS ARRAY_KEY, `SpellID` FROM mod_rowow_skill_spell WHERE `SkillName` = ?', $skill);
+        $mobIds = [];
+        foreach (DB::World()->select('SELECT ms.`MobID` AS "mob", ms.`SkillLevel` AS "level" FROM mod_rowow_db_mob_skill ms JOIN mod_rowow_db_skill s ON s.`Id` = ms.`SkillID` WHERE s.`Name` = ? AND ms.`MobID` IS NOT NULL', $skill) as $r)
+            if (self::mobSkillSpell($levels, (int)$r['level']) == $spellId)
+                $mobIds[(int)$r['mob']] = (int)$r['mob'];
+
+        return $mobIds ? array_keys(self::creaturesOfMobs(array_values($mobIds))) : [];
+    }
+
+    // the skill uses of an RO creature, in mob_skill_db order: [['spell', 'skill', 'level', 'when', 'chance' (percent), 'castTime', 'delay' (seconds)]]
+    public static function creatureSkills(int $creatureId) : array
+    {
+        if (!($mobId = self::mobIdsOfCreatures([$creatureId])[$creatureId] ?? 0) || !DB::World()->selectCell('SHOW TABLES LIKE ?', 'mod_rowow_db_mob_skill'))
+            return [];
+
+        $rows = DB::World()->select(
+           'SELECT ms.`State` AS "state", ms.`SkillLevel` AS "level", ms.`Rate` AS "rate", ms.`CastTime` AS "castTime", ms.`Delay` AS "delay", ms.`Target` AS "target",
+                   ms.`ConditionType` AS "cond", ms.`ConditionValue` AS "condValue", s.`Name` AS "skill"
+            FROM   mod_rowow_db_mob_skill ms
+            JOIN   mod_rowow_db_skill s ON s.`Id` = ms.`SkillID`
+            WHERE  ms.`MobID` = ?d
+            ORDER BY ms.`RowIndex`', $mobId);
+        if (!$rows)
+            return [];
+
+        // [skill name => [level => spell]]
+        $spells = [];
+        foreach (DB::World()->select('SELECT `SkillName` AS "skill", `SkillLevel` AS "level", `SpellID` AS "spell" FROM mod_rowow_skill_spell WHERE `SkillName` IN (?a)', array_unique(array_column($rows, 'skill'))) as $s)
+            $spells[$s['skill']][(int)$s['level']] = (int)$s['spell'];
+
+        $out = [];
+        foreach ($rows as $r)
+        {
+            $levels = $spells[$r['skill']] ?? [];
+            if (!$levels)
+                continue;
+
+            $level = (int)$r['level'];
+            $spell = self::mobSkillSpell($levels, $level);
+
+            $when = self::MOB_SKILL_STATES[strtolower($r['state'] ?? 'any')] ?? ucfirst($r['state'] ?? '');
+            if ($cond = self::mobSkillCondition($r['cond'] ?? 'always', $r['condValue']))
+                $when .= ', '.$cond;
+            if (in_array(strtolower($r['target'] ?? ''), ['self', 'friend', 'master']))
+                $when .= ' (on '.(strtolower($r['target']) == 'self' ? 'itself' : (strtolower($r['target']) == 'friend' ? 'an ally' : 'its master')).')';
+
+            $out[] = array(
+                'spell'    => $spell,
+                'skill'    => $r['skill'],
+                'level'    => $level,
+                'when'     => $when,
+                'chance'   => round((int)$r['rate'] / 100, 2),
+                'castTime' => round((int)$r['castTime'] / 1000, 1),
+                'delay'    => round((int)$r['delay'] / 1000, 1)
+            );
+        }
+
+        return $out;
+    }
+
     // the drops of an RO creature (see mobDrops) or null
     public static function creatureDrops(int $creatureId) : ?array
     {

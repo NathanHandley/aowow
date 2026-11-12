@@ -615,6 +615,10 @@ class NpcPage extends GenericPage
             $genSpells = array_merge($genSpells, array_filter(explode(' ', $auras)));
         }
 
+        // ROWOW begin - a Ragnarok Online monster's skills are mob_skill_db's (mod-rowow's mob AI), not SmartAI's: their own tab below
+        $roSkills = Ragnarok::creatureSkills($this->typeId);
+        // ROWOW end
+
         if ($genSpells)
             $conditions[] = ['id', $genSpells];
 
@@ -689,6 +693,46 @@ class NpcPage extends GenericPage
                 }
             }
         }
+
+        // ROWOW begin - the RO monster's skills: one row a mob_skill_db use (a skill may be used at two levels, or in two states)
+        if ($roSkills)
+        {
+            $roSpells = new SpellList(array(['id', array_values(array_unique(array_column($roSkills, 'spell')))], Cfg::get('SQL_LIMIT_NONE')));
+            if (!$roSpells->error)
+            {
+                $this->extendGlobalData($roSpells->getJSGlobals(GLOBALINFO_SELF | GLOBALINFO_RELATED));
+                $roLvData = $roSpells->getListviewData();
+                $rows     = [];
+                foreach ($roSkills as $s)
+                    if (isset($roLvData[$s['spell']]))
+                        $rows[] = array_merge($roLvData[$s['spell']], array(
+                            'rank'     => 'Level '.$s['level'], // the level it's used at (a monster-only NPC_ skill has one spell for every level)
+                            'rowhen'   => $s['when'],
+                            'rochance' => $s['chance'],
+                            'rocast'   => $s['castTime'] ? $s['castTime'].' s' : 'Instant',
+                            'rodelay'  => $s['delay'] ? $s['delay'].' s' : '-'
+                        ));
+
+                if ($rows)
+                {
+                    $hasAbilities = in_array('abilities', array_column(array_column($this->lvTabs, 1), 'id'));
+                    $this->lvTabs[] = [SpellList::$brickFile, array(
+                        'data'      => $rows,
+                        'name'      => $hasAbilities ? 'Ragnarok skills' : '$LANG.tab_abilities',
+                        'id'        => $hasAbilities ? 'abilities-ro' : 'abilities',
+                        'note'      => 'Ragnarok Online monster skills: each row is one way the monster uses a skill (mob_skill_db), tried with its chance while the monster is in that state and the condition holds.',
+                        'extraCols' => array(
+                            "\$Listview.funcBox.createSimpleCol('rowhen', 'Used', '28%', 'rowhen')",
+                            "\$Listview.funcBox.createSimpleCol('rochance', 'Chance %', '8%', 'rochance')",
+                            "\$Listview.funcBox.createSimpleCol('rocast', 'Cast', '8%', 'rocast')",
+                            "\$Listview.funcBox.createSimpleCol('rodelay', 'Reuse delay', '9%', 'rodelay')"
+                        ),
+                        'hiddenCols' => ['reagents', 'skill', 'level']
+                    )];
+                }
+            }
+        }
+        // ROWOW end
 
         // tab: summoned by [spell]
         $conditions = ['OR'];
