@@ -498,6 +498,15 @@ class ItemsPage extends GenericPage
     {
         $sc = $this->filterObj->getSetCriteria();
         $cr = array_values($sc['cr'] ?? []);
+
+        // Ragnarok > Cards > compound slot: ?items&filter=cr=322:323;crs=40:<slot>
+        if (count($cr) == 2 && $cr == [322, 323] && in_array($game, [0, 3]))
+        {
+            $crs = array_map('intval', array_values($sc['crs']));
+            if ($crs[0] == Ragnarok::CATEGORY_CARD && isset(Ragnarok::COMPOUND_SLOTS[$crs[1]]))
+                return $game ? [Ragnarok::CATEGORY_CARD, $crs[1]] : [300, Ragnarok::CATEGORY_CARD, $crs[1]];
+        }
+
         if (count($cr) == 1 && $cr[0] == 322 && in_array($game, [0, 3]))
         {
             $cat  = (int)array_values($sc['crs'])[0];

@@ -185,6 +185,7 @@ var fi_filters = {
         // ROWOW: Ragnarok Online item stats (?_ragnarok_item)
         { id: 299, name: 'sepragnarok' },
         { id: 322, name: 'rocategory',              type: 'rocategory' },
+        { id: 323, name: 'rocompound',              type: 'rocompound' },
         { id: 300, name: 'rostr',                   type: 'num', noweights: 1 },
         { id: 301, name: 'roagi',                   type: 'num', noweights: 1 },
         { id: 302, name: 'rovit',                   type: 'num', noweights: 1 },

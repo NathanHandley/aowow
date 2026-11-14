@@ -18046,7 +18046,7 @@ var Menu = new function()
 //   EverQuest Items               ?items&filter=eqi=1   - the WoW categories, By Class (EQ classes)
 //   Ragnarok Items                ?items&filter=eqi=3   - the Ragnarok Online categories (filter cr=322), By Job
 // Menu ids (also the breadcrumb paths pages/items.php and pages/item.php build): game = eqi (0 all), then the category path
-// as before; Ragnarok: 100 Weapons > RO category, or the RO category; 200 By Job > job id; EQ: 201 By Class > EQ class id;
+// as before; Ragnarok: 100 Weapons > RO category, or the RO category (40 Cards > compound slot); 200 By Job > job id; EQ: 201 By Class > EQ class id;
 // in All Items 300 Ragnarok > (as Ragnarok Items) and 301 EQ Classes > EQ class id.
 function g_mwBuildItemMenus()
 {
@@ -18115,6 +18115,9 @@ function g_mwBuildItemMenus()
     {
         var url = function(cat) { return addFilter('?items&filter=cr=322;crs=' + cat + ';crv=0', f); };
 
+        // Cards > what they compound on (filter cr=323 with the Cards category)
+        var cardUrl = function(slot) { return addFilter('?items&filter=cr=322:323;crs=40:' + slot + ';crv=0:0', f); };
+
         var menu = $.map(L.ro, function(r)
         {
             if (r[0] == null)
@@ -18123,6 +18126,8 @@ function g_mwBuildItemMenus()
             var menuItem = [r[0], r[1], url(r[0])];
             if (r[2])
                 menuItem[MENU_IDX_SUB] = $.map(r[2], function(s) { return [[s[0], s[1], url(s[0])]]; });
+            else if (r[0] == 40 && L.roCardSlots)
+                menuItem[MENU_IDX_SUB] = $.map(L.roCardSlots, function(s) { return [[s[0], s[1], cardUrl(s[0])]]; });
 
             return [menuItem];
         });

@@ -106,6 +106,8 @@ class ItemPage extends genericPage
                     $this->path[] = 100;
                 if ($cat)
                     $this->path[] = $cat;
+                if ($cat == Ragnarok::CATEGORY_CARD && ($slot = Ragnarok::compoundSlot($ro['locations'])))
+                    $this->path[] = $slot;              // Cards > what it compounds on
             }
             return;
         }

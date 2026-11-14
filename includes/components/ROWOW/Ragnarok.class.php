@@ -40,6 +40,35 @@ class Ragnarok
     // MergedWorlds: item filter cr=322 value for every weapon category (1 - 22), the Items > Ragnarok Items > Weapons menu
     public const CATEGORY_ANY_WEAPON = 100;
 
+    public const CATEGORY_CARD = 40;
+
+    // MergedWorlds: what a card compounds on, item filter cr=323 and the Items > Ragnarok Items > Cards menu (also LANG.fidropdowns.rocompound
+    // and mn_items_mw.roCardSlots): value => [name, ?_ragnarok_item.locations LIKE pattern].  Headgear cards list all three head slots, and
+    // the enchantment orbs (roSubType Enchant) none
+    public const COMPOUND_SLOTS = array(
+        1 => ['Weapon',    'Right_Hand'],
+        2 => ['Shield',    'Left_Hand'],
+        3 => ['Armor',     'Armor'],
+        4 => ['Garment',   'Garment'],
+        5 => ['Footgear',  'Shoes'],
+        6 => ['Headgear',  '%Head_%'],
+        7 => ['Accessory', '%Accessory%'],
+        8 => ['Enchantments', '']
+    );
+
+    // the COMPOUND_SLOTS value of a card's ?_ragnarok_item.locations (0: none matches)
+    public static function compoundSlot(string $locations) : int
+    {
+        foreach (self::COMPOUND_SLOTS as $slot => [, $pattern])
+        {
+            $regex = '/^'.str_replace(['%', '_'], ['.*', '.'], $pattern).'$/';
+            if (preg_match($regex, $locations))
+                return $slot;
+        }
+
+        return 0;
+    }
+
     private const LOCATIONS = array(
         'Head_Top' => 'Upper Headgear', 'Head_Mid' => 'Middle Headgear', 'Head_Low' => 'Lower Headgear', 'Armor' => 'Body Armor',
         'Right_Hand' => 'Weapon', 'Left_Hand' => 'Shield', 'Both_Hand' => 'Two-Handed Weapon', 'Garment' => 'Garment', 'Shoes' => 'Footgear',

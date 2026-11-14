@@ -2049,6 +2049,7 @@ class ItemListFilter extends Filter
         320 => [parent::CR_NUMERIC,   'ro.aspdRate',            NUM_CAST_INT,            true              ], // roaspd
         321 => [parent::CR_CALLBACK,  'cbRagnarokFlag',         'refineable',            null              ], // rorefineable [yn]
         322 => [parent::CR_CALLBACK,  'cbRagnarokCategory',     null,                    null              ], // rocategory [enum]
+        323 => [parent::CR_CALLBACK,  'cbRagnarokCompound',     null,                    null              ], // rocompound [enum] (MergedWorlds: what a card compounds on)
     );
 
     protected $inputFields   = array(
@@ -2056,7 +2057,7 @@ class ItemListFilter extends Filter
         'wtv'   => [parent::V_RANGE,    [1, 999],                                        true ], // weight values
         'jc'    => [parent::V_LIST,     [1],                                             false], // use jewelcrafter gems for weight calculation
         'gm'    => [parent::V_LIST,     [2, 3, 4],                                       false], // gem rarity for weight calculation
-        'cr'    => [parent::V_RANGE,    [1, 322],                                        true ], // criteria ids (ROWOW: 300+ Ragnarok)
+        'cr'    => [parent::V_RANGE,    [1, 323],                                        true ], // criteria ids (ROWOW: 300+ Ragnarok)
         'crs'   => [parent::V_LIST,     [parent::ENUM_NONE, parent::ENUM_ANY, [0, 99999]], true ], // criteria operators
         'crv'   => [parent::V_REGEX,    parent::PATTERN_CRV,                             true ], // criteria values - only printable chars, no delimiters
         'upg'   => [parent::V_REGEX,    '/[^\d:]/ui',                                    false], // upgrade item ids
@@ -2462,6 +2463,15 @@ class ItemListFilter extends Filter
             return null;
 
         return ['ro.roCategory', $crs];
+    }
+
+    // MergedWorlds - what an RO card compounds on (Ragnarok::COMPOUND_SLOTS); cards only
+    protected function cbRagnarokCompound(int $cr, int $crs, string $crv) : ?array
+    {
+        if (!isset(Ragnarok::COMPOUND_SLOTS[$crs]))
+            return null;
+
+        return ['AND', ['ro.roCategory', Ragnarok::CATEGORY_CARD], ['ro.locations', Ragnarok::COMPOUND_SLOTS[$crs][1]]];
     }
 
     protected function cbFactionQuestReward(int $cr, int $crs, string $crv) : ?array

@@ -172,7 +172,7 @@ var mn_items_mw = {
         [37,"Accessories"],
         [38,"Costumes"],
         [,"Other"],
-        [40,"Cards"],
+        [40,"Cards"],                                   // its submenu: roCardSlots below
         [41,"Healing Items"],
         [42,"Usable Items"],
         [43,"Delayed Consumables"],
@@ -181,7 +181,9 @@ var mn_items_mw = {
         [46,"Pet Armor"],
         [47,"Miscellaneous"],
         [48,"Cash Shop Items"]
-    ]
+    ],
+    // MergedWorlds: Ragnarok > Cards by what they compound on (item filter cr=323, Ragnarok::COMPOUND_SLOTS)
+    roCardSlots: [[1,"Weapon"],[2,"Shield"],[3,"Armor"],[4,"Garment"],[5,"Footgear"],[6,"Headgear"],[7,"Accessory"],[8,"Enchantments"]]
 };
 var mn_items = [
     [2,"Weapons",,[
@@ -4031,6 +4033,9 @@ var LANG = {
                             [null, "Other"],
                             [40, "Cards"], [41, "Healing Items"], [42, "Usable Items"], [43, "Delayed Consumables"], [44, "Ammunition"], [45, "Pet Eggs"], [46, "Pet Armor"], [47, "Miscellaneous"], [48, "Cash Shop Items"]
                         ],
+        rocompound:     [  // MergedWorlds: what an RO card compounds on (Ragnarok::COMPOUND_SLOTS)
+                            [1, "Weapon"], [2, "Shield"], [3, "Armor"], [4, "Garment"], [5, "Footgear"], [6, "Headgear"], [7, "Accessory"], [8, "None (Enchantments)"]
+                        ],
         yn:             [   [1, "Yes"],                             [2, "No"]                               ],
         num:            [   [1, ">"],                               [2, ">="],                              [3, "="],                               [4, "<="],                              [5, "<"],                              [6, "!="]],
         side:           [   [1, "Yes"],                             [2, "Alliance"],                        [3, "Horde"],                           [4, "Both"],                            [5, "No"]                                       ],
@@ -4356,6 +4361,7 @@ var LANG = {
         // ROWOW: Ragnarok Online criteria
         sepragnarok:             "Ragnarok Online",
         rocategory:              "RO item category",
+        rocompound:              "RO card compounds on",
         rostr:                   "RO: STR bonus",
         roagi:                   "RO: AGI bonus",
         rovit:                   "RO: VIT bonus",
